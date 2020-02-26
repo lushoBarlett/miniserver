@@ -1,0 +1,25 @@
+{
+	"name" : "lushobarlett/miniserver",
+	"description" : "simple server",
+	"keywords" : ["server", "router", "routing"],
+	"require" : {
+		"php" : "^7.3.0",
+		"lushobarlett/cologger" : "~1.0.0"
+	},
+	"require-dev" : {
+		"phpunit/phpunit" : "^6"
+	},
+	"license" : "MIT",
+	"authors" : [
+		{
+			"name" : "Luciano Barletta",
+			"email" : "lushobarlett@gmail.com",
+			"role" : "Developer"
+		}
+	],
+	"autoload" : {
+		"psr-4" : {
+			"Server\\" : "src/"
+		}
+	}
+}
