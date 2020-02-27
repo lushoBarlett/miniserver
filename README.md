@@ -1,10 +1,14 @@
-# PHP mini mvc
+# PHP server
 
 You start by having a Service object with some defined routes:
 
 ```php
+
+use Server\Router;
+use Server\Service;
+
 $routes = [
-	"/my/route" => Router::Controller(
+	"/my/route" => Service::Controller(
 		MyController::class, [/*constructor argument list*/]
 	),
 	...
@@ -16,13 +20,17 @@ $webServ = new Service($routes);
 Optinally for debug:
 
 ```php
+
+use Server\Request;
+use Server\Service;
+
 $request = new Request(
 	/* passing arguments is Request's debug mode */
 	[
 		"property" => "value"
 	]
 );
-$webServ->debug($request);
+$webServ = new Service($routes, $request);
 ```
 
 Then you tell the service to respond based on the Request:
@@ -44,7 +52,7 @@ Example Controller:
 
 namespace Controllers;
 
-use MVC\IController;
+use Server\IController;
 
 class MyController implements IController {
 	
@@ -71,8 +79,8 @@ Example index.php:
 ```php
 <?php
 
-use MVC\Service;
-use MVC\Router;
+use Server\Service;
+use Server\Router;
 use Models\MyModel;
 use Controllers\MyController;
 
@@ -88,3 +96,21 @@ $webServ = new Service($routes);
 echo $webServ->respond();
 
 ```
+
+## TODO:
+*Some things I want to add soon but I'm in a hurry so I didn't yet*
+- Improve code coverage of tests. Right now I know it should work and that's fine. Response is a bother to test
+- Router options. Such as *native* redirection -instead of achieving this through a trivial controller-, route parameters, use route as is (not formatting it or internally changing it)
+- Special route for 404, and probably 500 as well
+- Template rendering utility with directives and model data (ain't nobody got time for that)
+- Trivial controller constructors, where you simply pass a short lambda and that's your process function. Would require to differentiate a non-constructed constructor from a constructed one, or use a "simply pass it as an argument" method.
+```php
+"/god-chamber" => "Service::ControllerMock(
+	// php 8.0 short lambdas are shorter to write
+	fn(Request $r) => Response::text("Leave now, mortal.")
+);
+```
+- Maybe a Service Selection System (SSSounds nice) where you can pick and choose which logic -aka Service- to use, given some conditions. Just maybe...
+
+## Cool ideas
+- Using a REST-full style app -because horizontal scalability-, make a game where the different routes are like rooms to explore and navigating through it can unlock information to further explore the server's routes. Use JWTs as the keys to prevent cheating. The story and the goal are up to you.
