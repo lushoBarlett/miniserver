@@ -93,11 +93,11 @@ class Response {
 	}
 
 	public static function notFound() {
-		return self::status(404);
+		return self::withStatus(404);
 	}
 
 	public static function serverError() {
-		return self::status(500);
+		return self::withStatus(500);
 	}
 }
 

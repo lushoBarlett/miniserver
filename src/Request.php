@@ -23,49 +23,30 @@ class Request {
 	}
 
 	private function get() {
+		$this->action = isset($_SERVER["REQUEST_URI"]) ?
+			$_SERVER["REQUEST_URI"] : null;
 
-		$this->trycatch( function() {
-			$this->action = $_SERVER["REQUEST_URI"];
-		});
+		$this->secure = isset($_SERVER["HTTPS"]) ?
+			true : false;
+	
+		$this->method = isset($_SERVER["REQUEST_METHOD"]) ?
+			$_SERVER["REQUEST_METHOD"] : null;
 
-		$this->trycatch( function() {
-			$this->secure = $_SERVER["HTTPS"] ? true : false;
-		});
-		
-		$this->trycatch( function() {
-			$this->method = $_SERVER["REQUEST_METHOD"];
-		});
+		$this->cookies = $_COOKIE;
+	
+		$this->contentType = isset($_SERVER["HTTP_CONTENT_TYPE"]) ?
+			$_SERVER["HTTP_CONTENT_TYPE"] : null;
+	
+		$this->raw = file_get_contents("php://input");
+	
+		$this->post = $_POST;
+	
+		$this->get = $_GET;
 
-		$this->trycatch( function() {
-			$this->cookies = $_COOKIE;
-		});
-		
-		$this->trycatch( function() {
-			$this->contentType = $_SERVER["HTTP_CONTENT_TYPE"];
-		});
-		
-		$this->trycatch( function() {
-			$this->raw = file_get_contents("php://input");
-		});
-		
-		$this->trycatch( function() {
-			$this->post = $_POST;
-		});
-		
-		$this->trycatch( function() {
-			$this->get = $_GET;
-		});
-		
-		$this->trycatch( function() {
-			$this->json = json_decode($this->raw);
-		});
-	}
-
-	private function trycatch(callable $f, array $args = []) {
 		try {
-			return $f(...$args);
-		} catch (\Exception $e) {
-			return $e;
+			$this->json = json_decode($this->raw);
+		} catch(\Exception $e) {
+			$this->json = null;
 		}
 	}
 }
