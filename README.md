@@ -3,8 +3,6 @@
 You start by having a Service object with some defined routes:
 
 ```php
-
-use Server\Router;
 use Server\Service;
 
 $routes = [
@@ -20,7 +18,6 @@ $webServ = new Service($routes);
 Optinally for debug:
 
 ```php
-
 use Server\Request;
 use Server\Service;
 
@@ -48,8 +45,6 @@ Simply ensure that your Controllers get loaded to the file where the Service obj
 Example Controller:
 
 ```php
-<?php
-
 namespace Controllers;
 
 use Server\IController;
@@ -77,15 +72,12 @@ class MyController implements IController {
 Example index.php:
 
 ```php
-<?php
-
 use Server\Service;
-use Server\Router;
 use Models\MyModel;
 use Controllers\MyController;
 
 $routes = [
-	"/" => Router::Controller(
+	"/" => Service::Controller(
 		MyController::class,
 		[ new MyModel ]
 	)
@@ -94,6 +86,16 @@ $routes = [
 $webServ = new Service($routes);
 
 echo $webServ->respond();
+```
+
+You can use `Service::SimpleController` and pass a closure as a short-hand for short controllers.
+
+```php
+$routes = [
+	"/" => Service::SimpleController(
+		function($r) { return Response::withText("go back"); }
+	)
+];
 
 ```
 
@@ -103,13 +105,6 @@ echo $webServ->respond();
 - Router options. Such as *native* redirection -instead of achieving this through a trivial controller-, route parameters, use route as is (not formatting it or internally changing it)
 - Special route for 404, and probably 500 as well
 - Template rendering utility with directives and model data (ain't nobody got time for that)
-- Trivial controller constructors, where you simply pass a short lambda and that's your process function. Would require to differentiate a non-constructed constructor from a constructed one, or use a "simply pass it as an argument" method.
-```php
-"/god-chamber" => "Service::ControllerMock(
-	// php 8.0 short lambdas are shorter to write
-	fn(Request $r) => Response::text("Leave now, mortal.")
-);
-```
 - Maybe a Service Selection System (SSSounds nice) where you can pick and choose which logic -aka Service- to use, given some conditions. Just maybe...
 
 ## Cool ideas
