@@ -27,15 +27,19 @@ class Service {
 		try {
 			$class = $c->name;
 			$con = new $class(...$c->args);
-			
+
 			$r = $con->process( $this->request );
-			
+
 			assert(
 				__NAMESPACE__ . "\\Response",  get_class($r),
 				"Controller responded with a non Response type value"
 			);
 		}
-		catch (Exception $e) {
+		catch (\Exception $e) {
+			Logger::error( (string)$e );
+			$r = Response::serverError();
+		}
+		catch (\Error $e) {
 			Logger::error( (string)$e );
 			$r = Response::serverError();
 		}
@@ -47,6 +51,13 @@ class Service {
 		return (object)[
 			"name" => $class,
 			"args" => $params
+		];
+	}
+
+	public static function SimpleController(callable $processor) {
+		return (object)[
+			"name" => SimpleController::class,
+			"args" => [$processor]
 		];
 	}
 }

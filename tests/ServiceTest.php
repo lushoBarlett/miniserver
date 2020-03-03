@@ -3,6 +3,7 @@
 namespace Server;
 
 use PHPUnit\Framework\TestCase;
+use Cologger\Logger;
 
 class TestController implements IController {
 
@@ -46,7 +47,63 @@ class ServiceTest extends TestCase {
 		$this->assertEquals("/path", (string)$response);
 	}
 
-	# TODO: ADD CONTROLLER ERROR TEST
+	public function testSimpleController() {
+		$routes = [
+			"/path" => Service::SimpleController(
+				function($r) { return Response::withText("text"); }
+			)
+		];
+
+		$request = new Request(
+			["action" => "/path"]
+		);
+
+		$service = new Service($routes, $request);
+
+		$response = $service->respond();
+		$this->assertEquals("text", (string)$response);
+	}
+
+	public function testControllerError() {
+		Logger::$logf = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
+		
+		/* initial file setup just in case */
+		if ( file_exists(Logger::$logf) )
+			unlink(Logger::$logf);
+
+		$this->assertFalse( file_exists(Logger::$logf) );
+
+		$routes = [
+			"/nores" => Service::SimpleController(
+				function($r) { return "not response"; }
+			),
+			"/excep" => Service::SimpleController(
+				function($r) { throw new \Exception; }
+			)
+		];
+
+		$request = new Request(
+			["action" => "/nores"]
+		);
+
+		$service = new Service($routes, $request);
+		$response = $service->respond();
+		
+		$this->assertEquals(Response::serverError(), $response);
+		$this->assertTrue( file_exists(Logger::$logf) );
+		unlink(Logger::$logf);
+
+		$request = new Request(
+			["action" => "/excep"]
+		);
+
+		$service = new Service($routes, $request);
+		$response = $service->respond();
+		
+		$this->assertEquals(Response::serverError(), $response);
+		$this->assertTrue( file_exists(Logger::$logf) );
+		unlink(Logger::$logf);
+	}
 }
 
 ?>
