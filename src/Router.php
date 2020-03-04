@@ -2,6 +2,13 @@
 
 namespace Server;
 
+require __DIR__ .
+	DIRECTORY_SEPARATOR . ".." .
+	DIRECTORY_SEPARATOR . "vendor" .
+	DIRECTORY_SEPARATOR . "autoload.php";
+
+use function Server\route_split;
+
 class Router {
 
 	/*
@@ -18,7 +25,7 @@ class Router {
 		$this->tree = $this->node(null, []);
 		foreach($routes as $r => $val)
 			$this->tree = $this->_add(
-				$this->tree, $this->split($r), $val
+				$this->tree, route_split($r), $val
 			);
 	}
 
@@ -28,14 +35,6 @@ class Router {
 			"val" => $val,
 			"children" => $children
 		];
-	}
-
-	private function routefix(string $route) : string {
-		return trim($route, "/ ");
-	}
-
-	private function split(string $route) : array {
-		return explode("/", $this->routeFix($route));
 	}
 
 	/* res :: URLTree -> [String] -> Maybe a */
@@ -58,7 +57,7 @@ class Router {
 	}
 
 	public function resolve(string $url) {
-		return $this->_resolve($this->tree, $this->split($url));
+		return $this->_resolve($this->tree, route_split($url));
 	}
     
 	/* _add :: URLTree -> [String] -> a -> URLTree */

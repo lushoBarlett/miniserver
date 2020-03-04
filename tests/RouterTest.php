@@ -6,19 +6,6 @@ use PHPUnit\Framework\TestCase;
 
 class RouterTest extends TestCase {
 
-	public function testPathEquivalence() {
-		$routes = [
-			"/generic/path/" => "val"
-		];
-		$r = new Router($routes);
-
-		$this->assertEquals("val", $r->resolve("generic/path"));
-		$this->assertEquals("val", $r->resolve("/generic/path"));
-		$this->assertEquals("val", $r->resolve("generic/path/"));
-		$this->assertEquals("val", $r->resolve("/generic/path/"));
-		$this->assertEquals("val", $r->resolve(" generic/path/ "));
-	}
-
 	public function testPathResolutionGenericValues() {
 		$routes = [
 			"/generic/path" => "stuff",

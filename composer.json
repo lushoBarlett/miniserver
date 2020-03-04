@@ -18,6 +18,7 @@
 		}
 	],
 	"autoload" : {
+		"files" : ["src/utils.php"],
 		"psr-4" : {
 			"Server\\" : "src/"
 		}
