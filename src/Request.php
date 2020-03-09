@@ -23,30 +23,46 @@ class Request {
 	}
 
 	private function get() {
-		$this->action = isset($_SERVER["REQUEST_URI"]) ?
-			$_SERVER["REQUEST_URI"] : null;
+		$this->action = isset($_SERVER["REQUEST_URI"]) ? $this->splitURI($_SERVER["REQUEST_URI"]) : null;
 
-		$this->secure = isset($_SERVER["HTTPS"]) ?
-			true : false;
+		$this->secure = isset($_SERVER["HTTPS"]) ? true : false;
 	
-		$this->method = isset($_SERVER["REQUEST_METHOD"]) ?
-			$_SERVER["REQUEST_METHOD"] : null;
+		$this->method = isset($_SERVER["REQUEST_METHOD"]) ? $_SERVER["REQUEST_METHOD"] : null;
 
 		$this->cookies = $_COOKIE;
 	
-		$this->contentType = isset($_SERVER["HTTP_CONTENT_TYPE"]) ?
-			$_SERVER["HTTP_CONTENT_TYPE"] : null;
+		$this->contentType = isset($_SERVER["CONTENT_TYPE"]) ? $_SERVER["CONTENT_TYPE"] : null;
 	
-		$this->raw = file_get_contents("php://input");
-	
+		$this->raw = $this->getraw();
+
 		$this->post = $_POST;
 	
 		$this->get = $_GET;
 
-		try {
-			$this->json = json_decode($this->raw);
-		} catch(\Exception $e) {
-			$this->json = null;
+		$this->json = $this->getjson();
+	}
+
+	private function splitURI(string $uri) {
+		return explode("?", $uri)[0];
+	}
+
+	private function getraw() {
+		if ($this->method === "GET") {
+			try {
+				return urldecode($_SERVER["QUERY_STRING"]);
+			} catch (\Exception $e) {}
+		}
+	
+		return file_get_contents("php://input");
+	}
+
+	private function getjson() {
+		if ($this->contentType === "application/json") {
+			try {
+				return json_decode($this->raw);
+			} catch (\Exception $e) {
+				return (string)$e;
+			}
 		}
 	}
 }
