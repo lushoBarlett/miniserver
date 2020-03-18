@@ -25,7 +25,8 @@ class Response {
 
 		foreach ($this->cookies as $k => $j)
 			setcookie(
-				$k, $j['value'], $j['expire'],
+				$k, $j['value'],
+				($j['expire'] !== 0 ? time() + $j['expire'] : 0),
 				$j['secure'], $j['httponly']
 			);
 
