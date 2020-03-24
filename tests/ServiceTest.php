@@ -65,14 +65,6 @@ class ServiceTest extends TestCase {
 	}
 
 	public function testControllerError() {
-		Logger::$logf = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
-		
-		/* initial file setup just in case */
-		if ( file_exists(Logger::$logf) )
-			unlink(Logger::$logf);
-
-		$this->assertFalse( file_exists(Logger::$logf) );
-
 		$routes = [
 			"/nores" => Service::SimpleController(
 				function($r) { return "not response"; }
@@ -87,22 +79,24 @@ class ServiceTest extends TestCase {
 		);
 
 		$service = new Service($routes, $request);
+		$service->log = __DIR__ . "/__test.log";
 		$response = $service->respond();
 		
 		$this->assertEquals(Response::serverError(), $response);
-		$this->assertTrue( file_exists(Logger::$logf) );
-		unlink(Logger::$logf);
+		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
+		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 
 		$request = new Request(
 			["action" => "/excep"]
 		);
 
 		$service = new Service($routes, $request);
+		$service->log = __DIR__ . "/__test.log";
 		$response = $service->respond();
 		
 		$this->assertEquals(Response::serverError(), $response);
-		$this->assertTrue( file_exists(Logger::$logf) );
-		unlink(Logger::$logf);
+		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
+		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 	}
 }
 

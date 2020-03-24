@@ -8,6 +8,8 @@ class Service {
 
 	private $router;
 	private $request;
+       
+	public $log = __DIR__ . "/service.log";
 
 	public function __construct(array $routes = [], ?Request $debug = null) {
 		$this->router = new Router($routes);
@@ -36,11 +38,15 @@ class Service {
 			);
 		}
 		catch (\Exception $e) {
-			Logger::error( (string)$e );
+			( new Logger($this->log) )
+				->error( (string)$e );
+
 			$r = Response::serverError();
 		}
 		catch (\Error $e) {
-			Logger::error( (string)$e );
+			( new Logger($this->log) )
+				->error( (string)$e );
+
 			$r = Response::serverError();
 		}
 		echo ob_get_clean();

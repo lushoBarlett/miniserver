@@ -99,6 +99,14 @@ $routes = [
 
 ```
 
+### Logging
+
+The Service class logs errors only (for now), and by default it logs to `__DIR__ . "/service.log"`. To change that:
+```php
+$webServ = new Service($routes);
+$webServ->log = "myLogFile.log";
+```
+
 ## TODO:
 *Some things I want to add soon but I'm in a hurry so I didn't yet*
 - Improve code coverage of tests. Right now I know it should work and that's fine. Response is a bother to test
@@ -106,6 +114,7 @@ $routes = [
 - Special route for 404, and probably 500 as well
 - Template rendering utility with directives and model data (ain't nobody got time for that)
 - Maybe a Service Selection System (SSSounds nice) where you can pick and choose which logic -aka Service- to use, given some conditions. Just maybe...
+- LOG ALL THE THINGS!!!
 
 ## Cool ideas
 - Using a REST-full style app -because horizontal scalability-, make a game where the different routes are like rooms to explore and navigating through it can unlock information to further explore the server's routes. Use JWTs as the keys to prevent cheating. The story and the goal are up to you.

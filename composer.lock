@@ -4,21 +4,27 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f1b3ecdcebe32490f4350a1f07a79ecb",
+    "content-hash": "d368e9121cf8b8046b31e8ca7f0e63b6",
     "packages": [
         {
             "name": "lushobarlett/cologger",
-            "version": "v1.0.0",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lushoBarlett/cologger.git",
-                "reference": "f308e2563acf6b41572a6aac5a62e24827a42598"
+                "reference": "37be77b7935e7e8bd8cc5e68f9aed88af53f08fe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lushoBarlett/cologger/zipball/f308e2563acf6b41572a6aac5a62e24827a42598",
-                "reference": "f308e2563acf6b41572a6aac5a62e24827a42598",
+                "url": "https://api.github.com/repos/lushoBarlett/cologger/zipball/37be77b7935e7e8bd8cc5e68f9aed88af53f08fe",
+                "reference": "37be77b7935e7e8bd8cc5e68f9aed88af53f08fe",
                 "shasum": ""
+            },
+            "require": {
+                "php": "^7.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6"
             },
             "type": "library",
             "autoload": {
@@ -44,7 +50,7 @@
                 "logger",
                 "logging"
             ],
-            "time": "2020-02-15T02:00:23+00:00"
+            "time": "2020-03-24T16:02:22+00:00"
         }
     ],
     "packages-dev": [
@@ -407,16 +413,16 @@
         },
         {
             "name": "phpspec/prophecy",
-            "version": "v1.10.2",
+            "version": "v1.10.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "b4400efc9d206e83138e2bb97ed7f5b14b831cd9"
+                "reference": "451c3cd1418cf640de218914901e51b064abb093"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/b4400efc9d206e83138e2bb97ed7f5b14b831cd9",
-                "reference": "b4400efc9d206e83138e2bb97ed7f5b14b831cd9",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/451c3cd1418cf640de218914901e51b064abb093",
+                "reference": "451c3cd1418cf640de218914901e51b064abb093",
                 "shasum": ""
             },
             "require": {
@@ -466,7 +472,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2020-01-20T15:57:02+00:00"
+            "time": "2020-03-05T15:02:03+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -1573,7 +1579,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.3.0"
+        "php": "^7"
     },
     "platform-dev": []
 }
