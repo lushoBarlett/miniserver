@@ -1,4 +1,4 @@
-# PHP server
+# PHP server (OUTDATED)
 
 You start by having a Service object with some defined routes:
 

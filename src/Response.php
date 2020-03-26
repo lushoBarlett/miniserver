@@ -74,13 +74,19 @@ class Response {
 			->status($temporary ? 302 : 301);
 	}
 	
-	public static function withView(string $template) : Response {
-		$template = file_get_contents($template);
+	public static function withView(string $view) : Response {
+		$view = file_get_contents($view);
 
-		# TODO: template processing
-		
 		return (new Response)
-			->payload($template);
+			->payload($view);
+	}
+	
+	public static function withTemplate(string $template, array $vars = []) : Response {
+		$template = new Template( file_get_contents($template) );
+		$template->addVars($vars);
+
+		return (new Response)
+			->payload($template->render());
 	}
 	
 	public static function withText(string $text) : Response {

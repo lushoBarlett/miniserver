@@ -29,16 +29,11 @@ class ResponseTest extends TestCase {
 		$r = (new Response)->payload("text");
 		$this->assertEquals("text", (string)$r);
 	}
-
+	
 	# TODO:	ADD HEADER TESTING
 	# 	ADD STATIC TESTING
 }
 
-/*
- * flush the output after all the tests have finished.
- * I don't really know WHY this works, this being a class
- * but sure I'll take it, I don't have a better method yet
- */
-echo ob_flush();
+ob_end_clean();
 
 ?>
