@@ -9,7 +9,7 @@ class Service {
 	private $router;
 	private $request;
        
-	public $log = __DIR__ . "/service.log";
+	public $log = null;
 
 	public function __construct(array $routes = [], ?Request $debug = null) {
 		$this->router = new Router($routes);
@@ -35,11 +35,15 @@ class Service {
 			);
 		}
 		catch (\Exception $e) {
-			(new Logger($this->log))->error((string)$e);
+			if ($this->log !== null)
+				(new Logger($this->log))->error((string)$e);
+
 			$response = Response::serverError();
 		}
 		catch (\Error $e) {
-			(new Logger($this->log))->error((string)$e);
+			if ($this->log !== null)
+				(new Logger($this->log))->error((string)$e);
+
 			$response = Response::serverError();
 		}
 		echo ob_get_clean();

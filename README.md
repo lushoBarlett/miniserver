@@ -1,7 +1,6 @@
-# PHP server (OUTDATED)
+# PHP server
 
-You start by having a Service object with some defined routes:
-
+You start by having a Service object with some defined routes
 ```php
 use Server\Service;
 
@@ -12,11 +11,10 @@ $routes = [
 	...
 ];
 
-$webServ = new Service($routes);
+$service = new Service($routes);
 ```
 
-Optinally for debug:
-
+Optinally for debug
 ```php
 use Server\Request;
 use Server\Service;
@@ -27,13 +25,12 @@ $request = new Request(
 		"property" => "value"
 	]
 );
-$webServ = new Service($routes, $request);
+$service = new Service($routes, $request);
 ```
 
-Then you tell the service to respond based on the Request:
-
+Then you tell the service to respond based on the Request
 ```php
-$response = $webServ->respond();
+$response = $service->respond();
 
 /* optionally add or modify the Response object */
 
@@ -42,8 +39,7 @@ echo $response; /* string casting method takes care of the rest */
 
 Simply ensure that your Controllers get loaded to the file where the Service objects gets instantiated, where your put your controllers and what they do does not matter. It is recommended that they exist in a folder named `controllers`, each with its own file, so that you can autoload them easily.
 
-Example Controller:
-
+Example Controller
 ```php
 namespace Controllers;
 
@@ -69,8 +65,7 @@ class MyController implements IController {
 }
 ```
 
-Example index.php:
-
+Example index.php
 ```php
 use Server\Service;
 use Models\MyModel;
@@ -78,18 +73,16 @@ use Controllers\MyController;
 
 $routes = [
 	"/" => Service::Controller(
-		MyController::class,
-		[ new MyModel ]
+		MyController::class, [new MyModel]
 	)
 ];
 
-$webServ = new Service($routes);
+$service = new Service($routes);
 
-echo $webServ->respond();
+echo $service->respond();
 ```
 
-You can use `Service::SimpleController` and pass a closure as a short-hand for short controllers.
-
+You can use `Service::SimpleController` and pass a closure as a short-hand for short controllers
 ```php
 $routes = [
 	"/" => Service::SimpleController(
@@ -101,20 +94,27 @@ $routes = [
 
 ### Logging
 
-The Service class logs errors only (for now), and by default it logs to `__DIR__ . "/service.log"`. To change that:
+The Service class logs errors only (for now), and by default it doesn't log anything. To change that write something like this
 ```php
-$webServ = new Service($routes);
-$webServ->log = "myLogFile.log";
+$service = new Service($routes);
+$service->log = "myLogFile.log";
+```
+
+### Templates
+
+The Response object knows how to read HTML code and evaluate it with a specified scope and render it _before_ printing it. It takes in a string and a list of identifier and value pairs.
+```php
+Response::withTemplate(
+	"<h1><php? echo $t; ?></h1>",
+	["t" => "My Title"]
+);
 ```
 
 ## TODO:
-*Some things I want to add soon but I'm in a hurry so I didn't yet*
-- Improve code coverage of tests. Right now I know it should work and that's fine. Response is a bother to test
-- Router options. Such as *native* redirection -instead of achieving this through a trivial controller-, route parameters, use route as is (not formatting it or internally changing it)
-- Special route for 404, and probably 500 as well
-- Template rendering utility with directives and model data (ain't nobody got time for that)
-- Maybe a Service Selection System (SSSounds nice) where you can pick and choose which logic -aka Service- to use, given some conditions. Just maybe...
-- LOG ALL THE THINGS!!!
+- Finish documentation
+- Improve code coverage of tests. Specially the Response class
+- Special route for errors like 404 and 500
+- Improve logging
 
-## Cool ideas
-- Using a REST-full style app -because horizontal scalability-, make a game where the different routes are like rooms to explore and navigating through it can unlock information to further explore the server's routes. Use JWTs as the keys to prevent cheating. The story and the goal are up to you.
+## Cool idea
+- Using a REST-full style app, make a game where the different routes are rooms, or places. Navigating them can unlock information to further explore the server's routes. Try using JWTs as the keys.

@@ -76,27 +76,23 @@ class Response {
 	
 	public static function withView(string $view) : Response {
 		$view = file_get_contents($view);
-
-		return (new Response)
-			->payload($view);
+		
+		return (new Response)->payload($view);
 	}
 	
 	public static function withTemplate(string $template, array $vars = []) : Response {
-		$template = new Template( file_get_contents($template) );
+		$template = new Template(file_get_contents($template));
 		$template->addVars($vars);
 
-		return (new Response)
-			->payload($template->render());
+		return (new Response)->payload($template->render());
 	}
 	
 	public static function withText(string $text) : Response {
-		return (new Response)
-			->payload($text);
+		return (new Response)->payload($text);
 	}
 
 	public static function withStatus(int $status) : Response {
-		return (new Response)
-			->status($status);
+		return (new Response)->status($status);
 	}
 
 	public static function notFound() {
@@ -105,6 +101,10 @@ class Response {
 
 	public static function serverError() {
 		return self::withStatus(500);
+	}
+
+	public static function withJSON($value) {
+		return self::withText(json_encode($value));
 	}
 }
 
