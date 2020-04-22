@@ -17,40 +17,33 @@ class Service {
 	}
 
 	public function respond() : Response {
-		$c = $this->router->resolve(
-			$this->request->action
-		);
+		$resolution = $this->router->resolve($this->request->action);
 
-		if ($c === null)
+		if ($resolution->failed)
 			return Response::notFound();
 
 		ob_start();
-		$r;
 		try {
-			$class = $c->name;
-			$con = new $class(...$c->args);
+			$class = $resolution->value->name;
+			$controller = new $class(...$resolution->value->args);
 
-			$r = $con->process( $this->request );
+			$response = $controller->process($this->request, ...$resolution->route_args);
 
 			assert(
-				__NAMESPACE__ . "\\Response",  get_class($r),
+				__NAMESPACE__ . "\\Response",  get_class($response),
 				"Controller responded with a non Response type value"
 			);
 		}
 		catch (\Exception $e) {
-			( new Logger($this->log) )
-				->error( (string)$e );
-
-			$r = Response::serverError();
+			(new Logger($this->log))->error((string)$e);
+			$response = Response::serverError();
 		}
 		catch (\Error $e) {
-			( new Logger($this->log) )
-				->error( (string)$e );
-
-			$r = Response::serverError();
+			(new Logger($this->log))->error((string)$e);
+			$response = Response::serverError();
 		}
 		echo ob_get_clean();
-		return $r;
+		return $response;
 	}
 
 	public static function Controller(string $class, array $params = []){

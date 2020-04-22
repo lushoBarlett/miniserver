@@ -3,6 +3,9 @@
 namespace Server;
 
 use function Server\route_split;
+use function Server\Node;
+use function Server\Resolution;
+use function Server\not_resolved;
 
 class Router {
 
@@ -17,65 +20,62 @@ class Router {
 	private $tree;
 
 	public function __construct(array $routes = []) {
-		$this->tree = $this->node(null, []);
+		$this->tree = Node();
 		foreach($routes as $r => $val)
-			$this->tree = $this->_add(
-				$this->tree, route_split($r), $val
-			);
-	}
-
-	/* Node constructor */
-	private function node($val = null, array $children = []) {
-		return (object)[
-			"val" => $val,
-			"children" => $children
-		];
+			$this->tree = $this->_add($this->tree, route_split($r), $val);
 	}
 
 	/* res :: URLTree -> [String] -> Maybe a */
 	private function _resolve(object $tree, array $path) {
-		/* res (N v ch) [] = Just v */
-		if (count($path) === 0)
-			return $tree->val;
+		if (count($path) === 0) {
+			if ($tree->val !== null)
+				return Resolution($tree->val);
+
+			return not_resolved();
+		}
 
 		$p = $path[0];
 		$ps = array_slice($path, 1);
 
-		/* res (N v [!p]) (p:ps) = Nothing */
-		if (isset( $tree->children[$p] ) === false)
-			return null;
+		// specific route defined gets priority
+		if (isset( $tree->children[$p] )) {
+			return $this->_resolve($tree->children[$p], $ps);
+		}
 
-		/* res (N v ch) (p:ps) = res (ch!!p) ps */
-		return $this->_resolve(
-			$tree->children[$p], $ps
-		);
+		// argument route defined
+		if (isset( $tree->children["<argument>"] )) {
+			$res = $this->_resolve($tree->children["<argument>"], $ps);
+			$res->route_args[] = $p;
+
+			return $res;
+		}
+		
+		return not_resolved();
 	}
 
 	public function resolve(string $url) {
-		return $this->_resolve($this->tree, route_split($url));
+		$res = $this->_resolve($this->tree, route_split($url));
+		
+		// reverse the arguments, they were inserted backwards
+		$res->route_args = array_reverse($res->route_args);
+		
+		return $res;
 	}
     
 	/* _add :: URLTree -> [String] -> a -> URLTree */
 	private function _add(object $tree, array $path, $val) {
-		/* add (N v ch) [] a = N a [] */
 		if (count($path) === 0)
-			return $this->node($val);
+			return Node($val);
 
 		$p = $path[0];
 		$ps = array_slice($path, 1);
 
-		/* add (N v [!p]) (p:ps) a = N v [p => add (N Undefined []) ps a] */
 		if (isset( $tree->children[$p] ) === false) {
-			$tree->children[$p] = $this->_add(
-				$this->node(), $ps, $val
-			);
+			$tree->children[$p] = $this->_add(Node(), $ps, $val);
 			return $tree;
 		}
 
-		/* add (N v ch) (p:ps) = N v ((ch!!p) <- (add (ch!!p) ps a)) */
-		$tree->children[$p] = $this->_add(
-			$tree->children[$p], $ps, $val
-		);
+		$tree->children[$p] = $this->_add($tree->children[$p], $ps, $val);
         	return $tree;
 	}
 }

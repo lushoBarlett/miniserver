@@ -15,7 +15,7 @@ class SimpleController implements IController {
 	}
 
 	public function process(Request $request) : Response {
-		return ($this->processor)($request);
+		return ($this->processor)(...func_get_args());
 	}
 }
 

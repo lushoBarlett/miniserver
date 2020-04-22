@@ -63,6 +63,26 @@ class ServiceTest extends TestCase {
 		$response = $service->respond();
 		$this->assertEquals("text", (string)$response);
 	}
+	
+	public function testControllerExtraArguments() {
+		$routes = [
+			"/path/<argument>/<argument>/<argument>/" =>
+			Service::SimpleController(
+				function($r, $a, $b, $c) {
+					return Response::withText($a . $b . $c);
+				}
+			)
+		];
+
+		$request = new Request(
+			["action" => "/path/a/b/c"]
+		);
+
+		$service = new Service($routes, $request);
+
+		$response = $service->respond();
+		$this->assertEquals("abc", (string)$response);
+	}
 
 	public function testControllerError() {
 		$routes = [
