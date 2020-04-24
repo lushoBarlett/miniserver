@@ -118,6 +118,66 @@ class ServiceTest extends TestCase {
 		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
 		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 	}
+
+	public function testError404Handler() {
+		$routes = [
+			"/path" => Service::SimpleController(
+				function($r) { return Response::withText(""); }
+			),
+			"<404>" => Service::SimpleController(
+				function($r) { return Response::withText("handled gracefully"); }
+			)
+		];
+
+		$request = new Request(
+			["action" => "/non/existent"]
+		);
+
+		$service = new Service($routes, $request);
+
+		$response = $service->respond();
+		$this->assertEquals("handled gracefully", (string)$response);
+	}
+	
+	public function testError500Handler() {
+		$routes = [
+			"/excep" => Service::SimpleController(
+				function($r) { throw \Exception; }
+			),
+			"<500>" => Service::SimpleController(
+				function($r) { return Response::withText("handled gracefully"); }
+			)
+		];
+
+		$request = new Request(
+			["action" => "/excep"]
+		);
+
+		$service = new Service($routes, $request);
+
+		$response = $service->respond();
+		$this->assertEquals("handled gracefully", (string)$response);
+	}
+	
+	public function testPanic() {
+		$routes = [
+			"/excep" => Service::SimpleController(
+				function($r) { throw \Exception; }
+			),
+			"<500>" => Service::SimpleController(
+				function($r) { return "non response"; }
+			)
+		];
+
+		$request = new Request(
+			["action" => "/excep"]
+		);
+
+		$service = new Service($routes, $request);
+
+		$response = $service->respond();
+		$this->assertEquals(Response::serverError(), $response);
+	}
 }
 
 ?>

@@ -97,7 +97,7 @@ class TemplateTest extends TestCase {
 		$template = new Template($template);
 		$r = $template->render();
 
-		$this->assertRegexp("/$errorType/", $r);
+		$this->assertMatchesRegularExpression("/$errorType/", $r);
 	}
 }
 

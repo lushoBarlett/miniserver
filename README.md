@@ -110,10 +110,39 @@ Response::withTemplate(
 );
 ```
 
+### Special routes
+
+#### Arguments
+
+With "\<argument\>" you can tell the router when a section of the route can match with anything, and you can also retrieve it by just placing extra arguments in the process function. Also, any aditional route that is equal, but has the "\<argument\>" sections defined instead, results in a specification of the route. Any request will resolve to the more specific route if possible.
+```php
+"/path/with/<argument>/and/<argument>" => Service::SimpleController(
+	function($r, $arg1, $arg2) { ... }
+);
+
+// will work with the above
+"/path/with/1/and/2" => Service::SimpleController(
+	function($r) { ... }
+);
+```
+
+#### Errors
+
+Using "<404>" and "<500>", you can define special controllers for these errors. 404 will get called when the request matches no defined routes. 500 will be called when any errors or exceptions pop up when executing user defined code. So what happens when this handler also fails? Simple, a fallback to the default solution. Keep in mind that these special indicators are not actually routes, so they do not accept the '/' character before or after.
+```php
+"<404>" => Service::SimpleController(
+	function($r) { ... }
+);
+
+// will work with the above
+"<500>" => Service::SimpleController(
+	function($r) { ... }
+);
+```
+
 ## TODO:
 - Finish documentation
 - Improve code coverage of tests. Specially the Response class
-- Special route for errors like 404 and 500
 - Improve logging
 
 ## Cool idea
