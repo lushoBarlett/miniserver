@@ -83,11 +83,11 @@ class Request {
 
 				for($i = 0; $i < count($atributes['name']); $i++) {
 					$formatted[$identifier][$i] = [
-						$atributes['name'][$i],
-						$atributes['type'][$i],
-						$atributes['tmp_name'][$i],
-						$atributes['error'][$i],
-						$atributes['size'][$i]
+						"name" => $atributes['name'][$i],
+						"type" => $atributes['type'][$i],
+						"tmp_name" => $atributes['tmp_name'][$i],
+						"error" => $atributes['error'][$i],
+						"size" => $atributes['size'][$i]
 					];
 				}
 			}
