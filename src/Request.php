@@ -13,6 +13,7 @@ class Request {
 	public $contentType;
 	public $json;
 	public $cookies;
+	public $files;
 
 	public function __construct(?array $debug = null) {
 		$this->get();
@@ -40,6 +41,8 @@ class Request {
 		$this->get = $_GET;
 
 		$this->json = $this->getjson();
+
+		$this->files = $this->getfiles();
 	}
 
 	private function splitURI(string $uri) {
@@ -64,6 +67,38 @@ class Request {
 				return (string)$e;
 			}
 		}
+	}
+
+	private function getfiles() : array {
+		$formatted = [];
+
+		// identifier is the html form name
+		// atributes is an array for file information
+		foreach ($_FILES as $identifier => $atributes) {
+			
+			// if array, multiple file format is used
+			if (is_array($atributes['name'])) {
+
+				$formatted[$identifier] = [];
+
+				for($i = 0; $i < count($atributes['name']); $i++) {
+					$formatted[$identifier][$i] = [
+						$atributes['name'][$i],
+						$atributes['type'][$i],
+						$atributes['tmp_name'][$i],
+						$atributes['error'][$i],
+						$atributes['size'][$i]
+					];
+				}
+			}
+
+			// else, normal file format
+			else {
+				$formatted[$identifier] = $atributes;
+			}
+		}
+
+		return $formatted;
 	}
 }
 

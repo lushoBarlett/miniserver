@@ -30,6 +30,7 @@ class RequestTest extends TestCase {
 		$this->assertObjectHasAttribute("json", $r);
 		$this->assertObjectHasAttribute("contentType", $r);
 		$this->assertObjectHasAttribute("cookies", $r);
+		$this->assertObjectHasAttribute("files", $r);
 	}
 	
 	/**
