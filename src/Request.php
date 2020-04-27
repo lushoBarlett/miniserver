@@ -2,6 +2,8 @@
 
 namespace Server;
 
+use Server\File;
+
 class Request {
 
 	public $action;
@@ -82,19 +84,25 @@ class Request {
 				$formatted[$identifier] = [];
 
 				for($i = 0; $i < count($atributes['name']); $i++) {
-					$formatted[$identifier][$i] = [
-						"name" => $atributes['name'][$i],
-						"type" => $atributes['type'][$i],
-						"tmp_name" => $atributes['tmp_name'][$i],
-						"error" => $atributes['error'][$i],
-						"size" => $atributes['size'][$i]
-					];
+					$formatted[$identifier][$i] = new File(
+						$atributes['name'][$i],
+						$atributes['type'][$i],
+						$atributes['tmp_name'][$i],
+						$atributes['error'][$i],
+						$atributes['size'][$i]
+					);
 				}
 			}
 
 			// else, normal file format
 			else {
-				$formatted[$identifier] = $atributes;
+				$formatted[$identifier] = new File(
+					$atributes['name'],
+					$atributes['type'],
+					$atributes['tmp_name'],
+					$atributes['error'],
+					$atributes['size']
+				);
 			}
 		}
 
