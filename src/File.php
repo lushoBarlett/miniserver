@@ -40,7 +40,7 @@ class File {
 		if ($as === "")
 			$as = $this->name;
 
-		$dir = rtrim("/", $dir);
+		$dir = rtrim($dir, "/");
 
 		return move_uploaded_file($this->tmp_name, "$dir/$as");
 	}
