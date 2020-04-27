@@ -99,24 +99,24 @@ class ServiceTest extends TestCase {
 		);
 
 		$service = new Service($routes, $request);
-		$service->log = __DIR__ . "/__test.log";
+		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
 		$response = $service->respond();
 		
-		$this->assertEquals(Response::serverError(), $response);
-		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
-		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
+		$this->assertEquals((string)Response::serverError(), (string)$response);
+		$this->assertTrue(file_exists(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
+		$this->assertTrue(unlink(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
 
 		$request = new Request(
 			["action" => "/excep"]
 		);
 
 		$service = new Service($routes, $request);
-		$service->log = __DIR__ . "/__test.log";
+		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
 		$response = $service->respond();
 		
-		$this->assertEquals(Response::serverError(), $response);
-		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
-		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
+		$this->assertEquals((string)Response::serverError(), (string)$response);
+		$this->assertTrue(file_exists(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
+		$this->assertTrue(unlink(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
 	}
 
 	public function testError404Handler() {
@@ -176,7 +176,7 @@ class ServiceTest extends TestCase {
 		$service = new Service($routes, $request);
 
 		$response = $service->respond();
-		$this->assertEquals(Response::serverError(), $response);
+		$this->assertEquals((string)Response::serverError(), (string)$response);
 	}
 }
 

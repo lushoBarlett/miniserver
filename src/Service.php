@@ -106,7 +106,7 @@ class Service {
 
 	private function checkResponse($value) : void {
 		assert(
-			__NAMESPACE__ . "\\Response",  get_class($value),
+			__NAMESPACE__ . "\\Response" ===  get_class($value),
 			"Controller responded with a non Response type value"
 		);
 	}
