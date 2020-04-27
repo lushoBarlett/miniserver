@@ -33,12 +33,14 @@ class File {
 		$this->regex[] = $regex;
 	}
 
-	public function save(string $dir, string $as = "") : bool {
-		if ($error != UPLOAD_ERR_OK)
+	public function save(string $dir = "./", string $as = "") : bool {
+		if ($this->error != UPLOAD_ERR_OK)
 			return false;
 
 		if ($as === "")
-			$as = basename($this->name);
+			$as = $this->name;
+
+		$dir = rtrim("/", $dir);
 
 		return move_uploaded_file($this->tmp_name, "$dir/$as");
 	}
