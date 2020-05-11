@@ -38,4 +38,22 @@ function not_resolved() {
 	return Resolution("", [], true);
 }
 
+function template_path(string $filename) : string {
+	return
+		$_SERVER['DOCUMENT_ROOT'] .
+		DIRECTORY_SEPARATOR . 
+		"templates" .
+		DIRECTORY_SEPARATOR . 
+		$filename;
+}
+
+function load_template(string $filename, array $vars = []) {
+	$template = new Template(
+		file_get_contents(template_path($filename))
+	);
+
+	$template->addVars($vars);
+	echo $template->render();
+}
+
 ?>
