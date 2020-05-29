@@ -34,6 +34,12 @@ class UtilsTest extends TestCase {
 	public function testSplit($route) {
 		$this->assertEquals(["generic","path"], route_split($route));
 	}
+	
+	public function testTemplatePath() {
+		$this->assertEquals("/templates/test",template_path("test"));
+		Service::$template_path = "/other/path/";
+		$this->assertEquals("/other/path/test",template_path("test"));
+	}
 }
 
 ?>

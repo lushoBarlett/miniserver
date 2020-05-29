@@ -20,7 +20,7 @@ class TestController implements IController {
 }
 
 class ServiceTest extends TestCase {
-
+/*
 	public function testControllerFactory() {
 		$c = Service::Controller(
 			TestController::class, ["/argument"]
@@ -177,6 +177,34 @@ class ServiceTest extends TestCase {
 
 		$response = $service->respond();
 		$this->assertEquals((string)Response::serverError(), (string)$response);
+	}
+*/
+	public function testBaseUrl() {
+		$routes = [
+			"/route" => Service::SimpleController(
+				function($r) { return Response::withText("test"); }
+			)
+		];
+		
+		$request = new Request(
+			["action" => "route"]
+		);
+
+		$service = new Service($routes, $request);
+		$service->base_url = "/my/";
+
+		$response = $service->respond();
+		$this->assertEquals((string)Response::notFound(), (string)$response);
+		
+		$request = new Request(
+			["action" => "my/route"]
+		);
+
+		$service = new Service($routes, $request);
+		$service->base_url = "/my/";
+
+		$response = $service->respond();
+		$this->assertEquals("test", (string)$response);
 	}
 }
 

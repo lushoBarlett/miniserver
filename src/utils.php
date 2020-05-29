@@ -40,11 +40,9 @@ function not_resolved() {
 
 function template_path(string $filename) : string {
 	return
-		$_SERVER['DOCUMENT_ROOT'] .
-		DIRECTORY_SEPARATOR . 
-		"templates" .
-		DIRECTORY_SEPARATOR . 
-		$filename;
+		Service::$template_path ?
+		rtrim(Service::$template_path, '/') . "/$filename" :
+		rtrim($_SERVER['DOCUMENT_ROOT'], '/') . "/templates/$filename";
 }
 
 function load_template(string $filename, array $vars = []) {

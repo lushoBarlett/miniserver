@@ -13,7 +13,9 @@ class Service {
 	private $e_404;
 	private $e_500;
        
-	public $log = null;
+	public $log = "";
+	public $base_url = "";
+	public static $template_path = "";
 
 	public function __construct(array $routes = [], ?Request $debug = null) {
 		$this->error404($routes);
@@ -43,20 +45,35 @@ class Service {
 			);
 	}
 
+	/* returns true if the base_url matches the prexix of the request and removes it, else false */
+	private function strip_route_prefix() {
+		$base = route_trim($this->base_url);
+		$req = route_trim($this->request->action);
+
+		$correct_prefix = $base == substr($req, 0, strlen($base));
+		
+		// strip base from request
+		if ($correct_prefix)
+			$this->request->action = substr($req, strlen($base));
+		
+		return $correct_prefix;
+	}
+
 	/* attempt to resolve and execute that resolution */
 	public function respond() : Response {
-		$resolution = $this->router->resolve($this->request->action);
-
-		if ($resolution->failed)
-			return $this->execute(
-				$this->e_404->name,
-				$this->e_404->args
-			);
+		if ($this->strip_route_prefix()) {
+			$resolution = $this->router->resolve($this->request->action);
+			if (!$resolution->failed)
+				return $this->execute(
+					$resolution->value->name,
+					$resolution->value->args,
+					$resolution->route_args
+				);
+		}
 
 		return $this->execute(
-			$resolution->value->name,
-			$resolution->value->args,
-			$resolution->route_args
+			$this->e_404->name,
+			$this->e_404->args
 		);
 	}
 
@@ -80,7 +97,7 @@ class Service {
 	}
 
 	private function logError($e) {
-		if ($this->log !== null)
+		if ($this->log)
 			(new Logger($this->log))->error((string)$e);
 	}
 
