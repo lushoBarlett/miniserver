@@ -27,7 +27,7 @@ class Response {
 			setcookie(
 				$k, $j['value'],
 				($j['expire'] !== 0 ? time() + $j['expire'] : 0),
-				$j['secure'], $j['httponly']
+				"/", "", $j['secure'], $j['httponly']
 			);
 
 		return $this->payload;
