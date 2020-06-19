@@ -8,80 +8,77 @@ use Cologger\Logger;
 class TestController implements IController {
 
 	private $path;
-
 	public function __construct(string $path) {
 		$this->path = $path;
 	}
 
 	public function process(Request $request) : Response {
-		/* Call model stuff */
 		return Response::withText($this->path);
 	}
 }
 
+class DepController implements IController {
+	
+	private $dep;
+	public function __construct() {
+		$this->dep = func_get_args();
+	}
+
+	public function process(Request $request) : Response {
+		// use serialization to preserve class names and private fields
+		return Response::withText(serialize($this->dep));
+	}
+}
+
 class ServiceTest extends TestCase {
-/*
+
+	private function gen_response(array $routes, Request $request) {
+		return (new Service($routes, $request))->respond();
+	}
+	private function ping(string $route) {
+		return new Request(["action" => $route]);
+	}
+
 	public function testControllerFactory() {
-		$c = Service::Controller(
-			TestController::class, ["/argument"]
-		);
+		$c = Service::Controller(TestController::class, ["/argument"]);
 
-		$this->assertTrue(is_object($c));
-
-		$this->assertEquals(__NAMESPACE__ . "\\TestController", $c->name);
+		$this->assertEquals(TestController::class, $c->name);
 		$this->assertEquals(["/argument"], $c->args);
 	}
 
 	public function testServiceResponse() {
-		$routes = [
-			"/path" => Service::Controller(
-				TestController::class, ["/path"]
-			)
-		];
-		$request = new Request(
-			["action" => "/path"]
+		$response = $this->gen_response(
+			["/path" => Service::Controller(TestController::class, ["/path"])],
+			$this->ping("/path")
 		);
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals("/path", (string)$response);
+		$this->assertEquals("/path", $response->get_payload());
 	}
 
 	public function testSimpleController() {
-		$routes = [
-			"/path" => Service::SimpleController(
-				function($r) { return Response::withText("text"); }
-			)
-		];
-
-		$request = new Request(
-			["action" => "/path"]
+		$response = $this->gen_response(
+			[
+				"/path" => Service::SimpleController(
+					function($r) { return Response::withText("text"); }
+				)
+			],
+			$this->ping("/path")
 		);
-
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals("text", (string)$response);
+		$this->assertEquals("text", $response->get_payload());
 	}
 	
 	public function testControllerExtraArguments() {
-		$routes = [
-			"/path/<argument>/<argument>/<argument>/" =>
-			Service::SimpleController(
-				function($r, $a, $b, $c) {
-					return Response::withText($a . $b . $c);
-				}
-			)
-		];
-
-		$request = new Request(
-			["action" => "/path/a/b/c"]
+		$response = $this->gen_response(
+			[
+				"/path/<argument>/<argument>/<argument>/" =>
+				Service::SimpleController(
+					function($r, $a, $b, $c) {
+						return Response::withText($a . $b . $c);
+					}
+				)
+			],
+			$this->ping("/path/a/b/c")
 		);
-
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals("abc", (string)$response);
+		$this->assertEquals("abc", $response->get_payload());
 	}
 
 	public function testControllerError() {
@@ -94,117 +91,102 @@ class ServiceTest extends TestCase {
 			)
 		];
 
-		$request = new Request(
-			["action" => "/nores"]
-		);
+		$service = new Service($routes, $this->ping("/nores"));
+		$service->log = __DIR__ . "/__test.log";
+		$response = $service->respond();
+		
+		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
+		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
+		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 
-		$service = new Service($routes, $request);
+		$service = new Service($routes, $this->ping("/excep"));
 		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
 		$response = $service->respond();
 		
-		$this->assertEquals((string)Response::serverError(), (string)$response);
-		$this->assertTrue(file_exists(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
-		$this->assertTrue(unlink(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
-
-		$request = new Request(
-			["action" => "/excep"]
-		);
-
-		$service = new Service($routes, $request);
-		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
-		$response = $service->respond();
-		
-		$this->assertEquals((string)Response::serverError(), (string)$response);
-		$this->assertTrue(file_exists(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
-		$this->assertTrue(unlink(__DIR__ . DIRECTORY_SEPARATOR . "__test.log"));
+		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
+		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
+		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 	}
 
 	public function testError404Handler() {
-		$routes = [
-			"/path" => Service::SimpleController(
-				function($r) { return Response::withText(""); }
-			),
-			"<404>" => Service::SimpleController(
-				function($r) { return Response::withText("handled gracefully"); }
-			)
-		];
-
-		$request = new Request(
-			["action" => "/non/existent"]
+		$response = $this->gen_response(
+			[
+				"/path" => Service::SimpleController(
+					function($r) { return Response::withText(""); }
+				),
+				"<404>" => Service::SimpleController(
+					function($r) { return Response::withText("handled gracefully"); }
+				)
+			],
+			$this->ping("/non/existent")
 		);
-
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals("handled gracefully", (string)$response);
+		$this->assertEquals("handled gracefully", $response->get_payload());
 	}
 	
 	public function testError500Handler() {
-		$routes = [
-			"/excep" => Service::SimpleController(
-				function($r) { throw \Exception; }
-			),
-			"<500>" => Service::SimpleController(
-				function($r) { return Response::withText("handled gracefully"); }
-			)
-		];
-
-		$request = new Request(
-			["action" => "/excep"]
+		$response = $this->gen_response(
+			[
+				"/excep" => Service::SimpleController(
+					function($r) { throw \Exception; }
+				),
+				"<500>" => Service::SimpleController(
+					function($r) { return Response::withText("handled gracefully"); }
+				)
+			],
+			$this->ping("/excep")
 		);
-
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals("handled gracefully", (string)$response);
+		$this->assertEquals("handled gracefully", $response->get_payload());
 	}
 	
 	public function testPanic() {
-		$routes = [
-			"/excep" => Service::SimpleController(
-				function($r) { throw \Exception; }
-			),
-			"<500>" => Service::SimpleController(
-				function($r) { return "non response"; }
-			)
-		];
-
-		$request = new Request(
-			["action" => "/excep"]
+		$response = $this->gen_response(
+			[
+				"/excep" => Service::SimpleController(
+					function($r) { throw \Exception; }
+				),
+				"<500>" => Service::SimpleController(
+					function($r) { return "non response"; }
+				)
+			],
+			$this->ping("/excep")
 		);
-
-		$service = new Service($routes, $request);
-
-		$response = $service->respond();
-		$this->assertEquals((string)Response::serverError(), (string)$response);
+		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
 	}
-*/
+
 	public function testBaseUrl() {
 		$routes = [
 			"/route" => Service::SimpleController(
 				function($r) { return Response::withText("test"); }
 			)
 		];
-		
-		$request = new Request(
-			["action" => "route"]
-		);
 
-		$service = new Service($routes, $request);
+		$service = new Service($routes, $this->ping("/route"));
 		$service->base_url = "/my/";
 
 		$response = $service->respond();
-		$this->assertEquals((string)Response::notFound(), (string)$response);
-		
-		$request = new Request(
-			["action" => "my/route"]
-		);
+		$this->assertEquals(Response::notFound()->get_status(), $response->get_status());
 
-		$service = new Service($routes, $request);
+		$service = new Service($routes, $this->ping("/my/route"));
 		$service->base_url = "/my/";
 
 		$response = $service->respond();
-		$this->assertEquals("test", (string)$response);
+		$this->assertEquals("test", $response->get_payload());
+	}
+
+	public function testControllerWithConstructable() {
+		$response = $this->gen_response(
+			[
+				"/route" => Service::Controller(
+					DepController::class,
+					[new Constructable(TestController::class, "/route"), "string"]
+				)
+			],
+			$this->ping("route")
+		);
+		$this->assertEquals(
+			[new TestController("/route"), "string"],
+			unserialize($response->get_payload())
+		);
 	}
 }
 

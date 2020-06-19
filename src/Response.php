@@ -2,8 +2,6 @@
 
 namespace Server;
 
-use Cologger\Logger;
-
 class Response {
 
 	private $status;
@@ -33,6 +31,12 @@ class Response {
 		return $this->payload;
 	}
 	
+	public function get_status()   { return $this->status;   }
+	public function get_redirect() { return $this->redirect; }
+	public function get_payload()  { return $this->payload;  }
+	public function get_cookies()  { return $this->cookies;  }
+	public function get_headers()  { return $this->headers;  }
+
 	public function status(int $status) : Response {
 		$this->status = $status;
 		return $this;

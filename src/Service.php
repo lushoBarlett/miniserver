@@ -81,7 +81,11 @@ class Service {
 	private function execute(string $name, array $args = [], array $route_args = []) : Response {
 		ob_start();
 		try {
-			$response = (new $name(...$args))->process($this->request, ...$route_args);
+			foreach($args as $a)
+				$resolved[] = (is_object($a) and get_class($a) == Constructable::class) ?
+					$a->construct() : $a;
+
+			$response = (new $name(...$resolved))->process($this->request, ...$route_args);
 			$this->checkResponse($response);
 		}
 		catch (\Exception $e) {
