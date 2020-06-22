@@ -91,6 +91,17 @@ class RouterTest extends TestCase {
 		$this->assertEquals(2, $r->resolve("path/specific")->value);
 		$this->assertEquals(1, $r->resolve("path/different")->value);
 	}
+
+	public function testSubrouteFirst() {
+		$routes = [
+			"/path/specific" => 2,
+			"/path" => 1
+		];
+		$r = new Router($routes);
+
+		$this->assertEquals(2, $r->resolve("path/specific")->value);
+		$this->assertEquals(1, $r->resolve("path")->value);
+	}
 }
 
 ?>

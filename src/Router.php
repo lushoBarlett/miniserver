@@ -27,7 +27,7 @@ class Router {
 
 	/* res :: URLTree -> [String] -> Maybe a */
 	private function _resolve(object $tree, array $path) {
-		if (count($path) === 0) {
+		if (!count($path)) {
 			if ($tree->val !== null)
 				return Resolution($tree->val);
 
@@ -38,12 +38,12 @@ class Router {
 		$ps = array_slice($path, 1);
 
 		// specific route defined gets priority
-		if (isset( $tree->children[$p] )) {
+		if (isset($tree->children[$p])) {
 			return $this->_resolve($tree->children[$p], $ps);
 		}
 
 		// argument route defined
-		if (isset( $tree->children["<argument>"] )) {
+		if (isset($tree->children["<argument>"])) {
 			$res = $this->_resolve($tree->children["<argument>"], $ps);
 			$res->route_args[] = $p;
 
@@ -64,13 +64,13 @@ class Router {
     
 	/* _add :: URLTree -> [String] -> a -> URLTree */
 	private function _add(object $tree, array $path, $val) {
-		if (count($path) === 0)
-			return Node($val);
+		if (!count($path))
+			return Node($val, $tree->children);
 
 		$p = $path[0];
 		$ps = array_slice($path, 1);
 
-		if (isset( $tree->children[$p] ) === false) {
+		if (!isset($tree->children[$p])) {
 			$tree->children[$p] = $this->_add(Node(), $ps, $val);
 			return $tree;
 		}
