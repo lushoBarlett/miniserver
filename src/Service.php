@@ -7,48 +7,32 @@ use Cologger\Logger;
 class Service {
 
 	private $router;
-	private $request;
 
-	/* controllers for errors 404 and 500 */
-	private $e_404;
-	private $e_500;
+	// controllers for errors 404 and 500
+	private $e404;
+	private $e500;
        
-	public $log = "";
-	public $base_url = "";
-	public static $template_path = "";
+	public $log_file;
+	public $base_url;
 
-	public function __construct(array $routes = [], ?Request $debug = null) {
-		$this->error404($routes);
-		$this->error500($routes);
+	private function process_directives($conf) {
+		$this->e404 = $conf["@404"] ?? ConstController::Node(Response::notFound());
+		$this->e500 = $conf["@500"] ?? ConstController::Node(Response::serverError());
 
+		$this->log_file = $conf["@log-file"] ?? null;
+		$this->base_url = $conf["@base-url"] ?? null;
+	}
+
+	public function __construct(array $routes = [], array $conf = []) {
 		$this->router = new Router($routes);
-		$this->request = $debug ? $debug : new Request;
+		$this->process_directives($conf);
 	}
 
-	/* Sets up special 404 handler, if present. Otherwise use default */
-	private function error404(array $routes) : void {
-		if (isset($routes["<404>"]))
-			$this->e_404 = $routes["<404>"];
-		else
-			$this->e_404 = self::SimpleController(
-				function($r) { return Response::notFound(); }
-			);
-	}
-	
-	/* Sets up special 500 handler, if present. Otherwise use default */
-	private function error500(array $routes) : void {
-		if (isset($routes["<500>"]))
-			$this->e_500 = $routes["<500>"];
-		else
-			$this->e_500 = self::SimpleController(
-				function($r) { return Response::serverError(); }
-			);
-	}
-
-	/* returns true if the base_url matches the prexix of the request and removes it, else false */
-	private function strip_route_prefix() {
+	// Returns true if the base_url matches the prefix of the request,
+	// then removes it for validation. Else false
+	private function strip_route_prefix(Request &$r) {
 		$base = route_trim($this->base_url);
-		$req = route_trim($this->request->action);
+		$r->action = route_trim($r->action);
 
 		$correct_prefix = $base == substr($req, 0, strlen($base));
 		
@@ -59,33 +43,32 @@ class Service {
 		return $correct_prefix;
 	}
 
-	/* attempt to resolve and execute that resolution */
-	public function respond() : Response {
-		if ($this->strip_route_prefix()) {
-			$resolution = $this->router->resolve($this->request->action);
+	public function respond(?Request $r) : Response {
+		$r = $r ?? new Request;
+
+		if ($this->strip_route_prefix($r)) {
+			$resolution = $this->router->resolve($r->action);
 			if (!$resolution->failed)
 				return $this->execute(
-					$resolution->value->name,
-					$resolution->value->args,
+					$resolution->value->cons,
+					$resolution->value->meta,
 					$resolution->route_args
 				);
 		}
 
-		return $this->execute(
-			$this->e_404->name,
-			$this->e_404->args
-		);
+		return $this->execute($this->e404->cons, $this->e404->meta);
 	}
 
-	/* attempt to call controller */
-	private function execute(string $name, array $args = [], array $route_args = []) : Response {
+	private function execute(string $cons, array $meta = [], array $route_args = []) : Response {
 		ob_start();
 		try {
+			// TODO: change for provider logic
+			$resolved = [];
 			foreach($args as $a)
 				$resolved[] = (is_object($a) and get_class($a) == Constructable::class) ?
 					$a->construct() : $a;
 
-			$response = (new $name(...$resolved))->process($this->request, ...$route_args);
+			$response = (new $cons($this, $meta))->__service_init($this->request, ...$route_args);
 			$this->checkResponse($response);
 		}
 		catch (\Exception $e) {
@@ -101,17 +84,16 @@ class Service {
 	}
 
 	private function logError($e) {
-		if ($this->log)
-			(new Logger($this->log))->error((string)$e);
+		if ($this->log_file)
+			(new Logger($this->log_file))->error((string)$e);
 	}
 
-	/* attempt to use error 500 controller */
-	private function respondError() : Response {
-		$controller = $this->e_500->name;
-		$args = $this->e_500->args;
+	private function respondError(Request $r) : Response {
+		$cons = $this->e500->cons;
+		$meta = $this->e500->meta;
 		
 		try {
-			$response = (new $controller(...$args))->process($this->request);
+			$response = (new $cons($this, $meta))->__service_init($r);
 			$this->checkResponse($response);
 		}
 		catch(\Exception $e) {
@@ -125,30 +107,14 @@ class Service {
 		return $response;
 	}
 
-	private function checkResponse($value) : void {
-		assert(
-			__NAMESPACE__ . "\\Response" ===  get_class($value),
-			"Controller responded with a non Response type value"
-		);
+	private function check_response($value) : void {
+		if (get_class($value) !== Response::class)
+			throw new \Exception("Controller responded with a non Response type value");
 	}
 
-	/* default "everything failed" response */
+	// default "everything failed" response
 	private function panic() : Response {
 		return Response::serverError();
-	}
-
-	public static function Controller(string $class, array $params = []){
-		return (object)[
-			"name" => $class,
-			"args" => $params
-		];
-	}
-
-	public static function SimpleController(callable $processor) {
-		return (object)[
-			"name" => SimpleController::class,
-			"args" => [$processor]
-		];
 	}
 }
 

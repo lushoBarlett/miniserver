@@ -3,9 +3,6 @@
 namespace Server;
 
 use function Server\route_split;
-use function Server\Node;
-use function Server\Resolution;
-use function Server\not_resolved;
 
 class Router {
 
@@ -20,7 +17,7 @@ class Router {
 	private $tree;
 
 	public function __construct(array $routes = []) {
-		$this->tree = Node();
+		$this->tree = self::Node();
 		foreach($routes as $r => $val)
 			$this->tree = $this->_add($this->tree, route_split($r), $val);
 	}
@@ -29,9 +26,9 @@ class Router {
 	private function _resolve(object $tree, array $path) {
 		if (!count($path)) {
 			if ($tree->val !== null)
-				return Resolution($tree->val);
+				return self::Resolution($tree->val);
 
-			return not_resolved();
+			return self::not_resolved();
 		}
 
 		$p = $path[0];
@@ -43,6 +40,7 @@ class Router {
 		}
 
 		// argument route defined
+		// FIXME: change argument sintax to have '@' prefix
 		if (isset($tree->children["<argument>"])) {
 			$res = $this->_resolve($tree->children["<argument>"], $ps);
 			$res->route_args[] = $p;
@@ -50,7 +48,7 @@ class Router {
 			return $res;
 		}
 		
-		return not_resolved();
+		return self::not_resolved();
 	}
 
 	public function resolve(string $url) {
@@ -65,18 +63,37 @@ class Router {
 	/* _add :: URLTree -> [String] -> a -> URLTree */
 	private function _add(object $tree, array $path, $val) {
 		if (!count($path))
-			return Node($val, $tree->children);
+			return self::Node($val, $tree->children);
 
 		$p = $path[0];
 		$ps = array_slice($path, 1);
 
 		if (!isset($tree->children[$p])) {
-			$tree->children[$p] = $this->_add(Node(), $ps, $val);
+			$tree->children[$p] = $this->_add(self::Node(), $ps, $val);
 			return $tree;
 		}
 
 		$tree->children[$p] = $this->_add($tree->children[$p], $ps, $val);
         	return $tree;
+	}
+
+	private static function Node($val = null, array $children = []) {
+		return (object)[
+			"val" => $val,
+			"children" => $children
+		];
+	}
+
+	private static function Resolution($controller, array $args = [], bool $failed = false) {
+		return (object)[
+			"value" => $controller,
+			"route_args" => $args,
+			"failed" => $failed
+		];
+	}
+
+	private static function not_resolved() {
+		return self::Resolution("", [], true);
 	}
 }
 

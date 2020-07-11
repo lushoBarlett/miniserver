@@ -17,27 +17,6 @@ function route_arguments(string $route) : array {
 	);
 }
 
-/* Node constructor */
-function Node($val = null, array $children = []) {
-	return (object)[
-		"val" => $val,
-		"children" => $children
-	];
-}
-
-/* Resolution constructor */
-function Resolution($controller, array $args = [], bool $failed = false) {
-	return (object)[
-		"value" => $controller,
-		"route_args" => $args,
-		"failed" => $failed
-	];
-}
-
-function not_resolved() {
-	return Resolution("", [], true);
-}
-
 function template_path(string $filename) : string {
 	return
 		Service::$template_path ?

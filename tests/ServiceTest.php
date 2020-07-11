@@ -7,7 +7,7 @@ use Cologger\Logger;
 
 class TestController implements IController {
 
-	private $path;
+	public $path;
 	public function __construct(string $path) {
 		$this->path = $path;
 	}
@@ -17,9 +17,9 @@ class TestController implements IController {
 	}
 }
 
-class DepController implements IController {
+class Dep implements IController {
 	
-	private $dep;
+	public $dep;
 	public function __construct() {
 		$this->dep = func_get_args();
 	}
@@ -177,14 +177,17 @@ class ServiceTest extends TestCase {
 		$response = $this->gen_response(
 			[
 				"/route" => Service::Controller(
-					DepController::class,
-					[new Constructable(TestController::class, "/route"), "string"]
+					Dep::class,
+					[
+						new Constructable(TestController::class, "/route"),
+						new Constructable(Dep::class, new Constructable(Dep::class, "s", 1), null)
+					]
 				)
 			],
 			$this->ping("route")
 		);
 		$this->assertEquals(
-			[new TestController("/route"), "string"],
+			[new TestController("/route"), new Dep(new Dep("s", 1), null)],
 			unserialize($response->get_payload())
 		);
 	}
