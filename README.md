@@ -1,18 +1,35 @@
-# PHP server
+# Mini
+
+## Service
 
 You start by having a Service object with some defined routes
 ```php
 use Server\Service;
+use Server\Controllers\Controller;
 
 $routes = [
-	"/my/route" => Service::Controller(
-		MyController::class, [/*constructor argument list*/]
-	),
+	"/my/route" => Controller::Node(MyController::class)
+		->args(...),
 	...
 ];
 
 $service = new Service($routes);
 ```
+
+Service takes in an Environment
+```php
+use Server\Service;
+use Server\Controllers\Controller;
+
+$routes = [
+	"/my/route" => Controller::Node(MyController::class)
+		->args(...),
+	...
+];
+
+$service = new Service($routes);
+```
+
 
 Optinally for debug
 ```php
@@ -21,9 +38,7 @@ use Server\Service;
 
 $request = new Request(
 	/* passing arguments is Request's debug mode */
-	[
-		"property" => "value"
-	]
+	["property" => "value"]
 );
 $service = new Service($routes, $request);
 ```
@@ -145,5 +160,3 @@ Using "<404>" and "<500>", you can define special controllers for these errors. 
 - Improve code coverage of tests. Specially the Response class
 - Improve logging
 
-## Cool idea
-- Using a REST-full style app, make a game where the different routes are rooms, or places. Navigating them can unlock information to further explore the server's routes. Try using JWTs as the keys.

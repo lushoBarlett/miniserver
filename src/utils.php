@@ -17,6 +17,21 @@ function route_arguments(string $route) : array {
 	);
 }
 
+// FIXME: is this better?
+function constructable(string $cons) : callable {
+	$args = array_slice(func_get_args, 1);
+
+	return function() use ($cons, $args) {
+		foreach($args as &$a)
+			// NOTE: not compatible with intentional callable arguments
+			if (is_callable($a))
+				$a = $a();
+
+		return new $cons($args);
+	}
+}
+
+// trash
 function template_path(string $filename) : string {
 	return
 		Service::$template_path ?
