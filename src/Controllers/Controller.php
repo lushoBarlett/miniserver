@@ -4,17 +4,14 @@ namespace Server\Controllers;
 
 class Controller implements IController {
 
-	private $service;
-	private $metadata;
+	private $env;
 
-	public function __construct(Service $service, array $metadata = []) {
-		$this->service = $service;
-		// TODO: wtf with @args?
-		$this->metadata = $metadata;
+	public function __construct(Environment $env) {
+		$this->env = $env;
 	}
 
 	public function __service_init(Request $request) : Response {
-		switch($request->method) {
+		switch(strtolower($request->method)) {
 		case 'get':
 		case 'post':
 		case 'put':
@@ -39,24 +36,11 @@ class Controller implements IController {
 	public function trace(Request $r)   : Response { return Response::notFound(); }
 	public function connect(Request $r) : Response { return Response::notFound(); }
 
-	public static function Node($c_or_meta, $maybe_c) : object {
-		if (is_string($c_or_meta))
-			return (object)[
-				"cons" => $c_or_meta,
-				"meta" => []
-			];
-
-		else if (is_array($c_or_meta) and is_string($maybe_c))
-			return (object)[
-				"cons" => $maybe_c,
-				"meta" => ["@args" => $c_or_meta]
-			];
-
-		else throw new Exception(
-			"Wrong arguments supplied to Controller::Node\nExpected:\n"
-			. "\t- controller class [string]"
-			. "\t- controller metadata [array], controller class [string]\n"
-		);
+	public static function Node(string $cons, ?Environment $env) : object {
+		return (object)[
+			"cons" => $cons,
+			"env" => $env
+		];
 	}
 }
 

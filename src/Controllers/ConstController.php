@@ -2,22 +2,22 @@
 
 namespace Server\Controllers;
 
-class ConstantController implements IController {
+class ConstController implements IController {
 
-	private $const;
+	private $env;
 
-	public function __construct(Service $serv, array $metadata) {
-		$this->const = $metadata["@constant"];
+	public function __construct(Environment $env) {
+		$this->env = $env;
 	}
 
 	public function __service_init(Request $request) : Response {
-		return $this->const;
+		return $this->env->constant("resp");
 	}
 
-	public static function Node(Response $constant) {
+	public static function Node(Response $r) : object {
 		return (object)[
 			"cons" => self::class,
-			"meta" => ["@constant" => $constant]
+			"meta" => ["resp" => $r]
 		];
 	}
 }

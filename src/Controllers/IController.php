@@ -4,27 +4,20 @@ namespace Server\Controllers;
 
 interface IController {
 
-	// constructor takes a service reference
-	// and an associative array of directives
-	// and other unspecified data you might wanna use.
-	// The data complies with no rules whatsoever,
-	// but the style used in the provided Controllers followes rules
-	// for consistency purposes.
-	// This array corresponds to the `meta` Node field further down.
-	public function __construct(Service $service, array $metadata = []);
+	public function __construct(Environment $env);
 
 	// Service calls this function when providing the resquest
-	// and expects a response, that it then returns
 	public function __service_init(Request $request) : Response;
 
 	// Node constructor for routing purposes, takes arbitrary arguments
-	// but must return an object as shown below. The arguments
-	// The functionality of a Controller lies in what metadata
-	// it takes and how it behaves with it.
+	// but must return an object as shown below. The first arguument
+	// is the Controller class name that you wanna instantiate.
+	// The second argument is an optional Environment that extends
+	// the Service environments (and can override it)
 	// 
 	// (object)[
 	//     "cons" => SomeClass::class,
-	//     "meta" => $metadata_array
+	//     "env" => $environment_or_null
 	// ]
 	public static function Node(...$args) : object;
 }
