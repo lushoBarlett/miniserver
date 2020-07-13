@@ -2,9 +2,15 @@
 
 namespace Server;
 
-use function Server\route_split;
-
+// TODO: optimize.
+// 1. adapt implementation from functional to imperative
+// 2. compile routes to a file tree to achieve O(1) instead of O(N + LogN)
+//
+// Is the latter really a good idea? The constant may be too big?
+// Maybe this can be set as an option
 class Router {
+
+	const ARGUMENT = "@";
 
 	/*
 	 * # Abstraction
@@ -19,7 +25,11 @@ class Router {
 	public function __construct(array $routes = []) {
 		$this->tree = self::Node();
 		foreach($routes as $r => $val)
-			$this->tree = $this->_add($this->tree, route_split($r), $val);
+			$this->tree = $this->_add($this->tree, self::route_split($r), $val);
+	}
+
+	private function partition(array $path) {
+		return [$path[0], array_slice($path, 1)];
 	}
 
 	/* res :: URLTree -> [String] -> Maybe a */
@@ -31,8 +41,7 @@ class Router {
 			return self::not_resolved();
 		}
 
-		$p = $path[0];
-		$ps = array_slice($path, 1);
+		list($p, $ps) = $this->partition($path);
 
 		// specific route defined gets priority
 		if (isset($tree->children[$p])) {
@@ -40,9 +49,8 @@ class Router {
 		}
 
 		// argument route defined
-		// FIXME: change argument sintax to have '@' prefix
-		if (isset($tree->children["<argument>"])) {
-			$res = $this->_resolve($tree->children["<argument>"], $ps);
+		if (isset($tree->children[self::ARGUMENT])) {
+			$res = $this->_resolve($tree->children[self::ARGUMENT], $ps);
 			$res->route_args[] = $p;
 
 			return $res;
@@ -52,7 +60,7 @@ class Router {
 	}
 
 	public function resolve(string $url) {
-		$res = $this->_resolve($this->tree, route_split($url));
+		$res = $this->_resolve($this->tree, self::route_split($url));
 		
 		// reverse the arguments, they were inserted backwards
 		$res->route_args = array_reverse($res->route_args);
@@ -65,8 +73,7 @@ class Router {
 		if (!count($path))
 			return self::Node($val, $tree->children);
 
-		$p = $path[0];
-		$ps = array_slice($path, 1);
+		list($p, $ps) = $this->partition($path);
 
 		if (!isset($tree->children[$p])) {
 			$tree->children[$p] = $this->_add(self::Node(), $ps, $val);
@@ -94,6 +101,21 @@ class Router {
 
 	private static function not_resolved() {
 		return self::Resolution("", [], true);
+	}
+
+	public static function route_trim(string $route) : string {
+		return trim($route, '/ ');
+	}
+
+	public static function route_split(string $route) : array {
+		return explode('/', self::route_trim($route));
+	}
+
+	public static function route_arguments(string $route) : array {
+		return array_map(
+			function (string $r) : bool { return $r === self::ARGUMENT; },
+			self::route_split($route)
+		);
 	}
 }
 

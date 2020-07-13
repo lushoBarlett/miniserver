@@ -9,13 +9,23 @@ class Service {
 	private $router;
 	private $env;
 
-	public function __construct(array $routes = [], ?Environment $env = null) {
-		$this->router = new Router($routes);
+	public function __construct(?Router $router, ?Environment $env) {
+		$this->router = $router ?? new Router;
 		$this->env = $env ?? new Environment;
 	}
 
 	private function report_event(string $event_name) {
-		return $this->env->report($event_name, array_slice(func_get_args(), 1));
+		try {
+			return $this->env->report(...func_get_args());
+		}
+		// NOTE: disposes silently of errors to hide them from clients,
+		// perhaps a debug mode should be added for this
+		catch(\Exception $e) {}
+		catch(\Error $e) {}
+
+		// NOTE: returns panic just in case a response was expected,
+		// perhaps events should have a unified output type
+		return $this->panic();
 	}
 
 	public function respond(?Request $r) : Response {
@@ -50,14 +60,19 @@ class Service {
 			$response = $this->panic();
 		}
 
-		// FIXME: what's this for?
-		echo ob_get_clean();
+		// NOTE: you are not supposed to output anything directly
+		$output = ob_get_clean();
+		if(!empty($output))
+			$this->report(
+				"exception",
+				new \Exception("Controller produced output: $output")
+			);
 
 		return $response;
 	}
 
-	private function check_response($value) : void {
-		if ($value instanceof Response)
+	private function check_response($response) : void {
+		if (!($value instanceof Response))
 			throw new \Exception("Controller responded with a non Response type value");
 	}
 
