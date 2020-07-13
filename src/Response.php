@@ -53,6 +53,7 @@ class Response {
 		return $this;
 	}
 
+	// TODO: improve
 	public function cookie(
 		string $name, string $value, int $expireIn = 0,
 		bool $secure = false, bool $httpOnly = false
@@ -71,7 +72,8 @@ class Response {
 		return $this;
 	}
 
-	/* Predefined Static Response Constructions (PSRC) */
+	// STATIC CONSTRUCTORS //
+
 	public static function redirectTo(string $url, bool $temporary = true) : Response {
 		return (new Response)
 			->redirect($url)
@@ -84,9 +86,12 @@ class Response {
 		return (new Response)->payload($view);
 	}
 	
-	public static function withTemplate(string $template, array $vars = []) : Response {
-		$template = new Template(file_get_contents($template));
-		$template->addVars($vars);
+	public static function withTemplate($template, ?array $vars) : Response {
+		if (is_string($template)) {
+			$template = new Template($template);
+			$template->add_vars($vars ?? []);
+		}
+		// TODO: error handling
 
 		return (new Response)->payload($template->render());
 	}
@@ -110,6 +115,8 @@ class Response {
 	public static function withJSON($value) {
 		return self::withText(json_encode($value));
 	}
+
+	// TODO: withCookie
 }
 
 ?>

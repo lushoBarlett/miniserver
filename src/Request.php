@@ -2,8 +2,6 @@
 
 namespace Server;
 
-use Server\File;
-
 class Request {
 
 	const GET = "GET";
