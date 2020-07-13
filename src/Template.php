@@ -24,6 +24,7 @@ class Template {
 		foreach($this->vars as $var => $value)
 			${$var} = $value;
 
+		// TODO: error handling
 		ob_start();
 			include $this->filename;
 		return ob_get_clean();

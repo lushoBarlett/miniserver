@@ -21,7 +21,7 @@ class Environment {
 				$this->directives[substr($code, 1)] = $value;
 				break;
 			case '#':
-				// TODO: allow classes
+				// TODO: allow classes?
 				assert(is_callable($value));
 				$this->providers[substr($code, 1)] = $value;
 				break;
@@ -48,6 +48,16 @@ class Environment {
 		$this->providers  = array_merge($this->providers,  $env->providers);
 		$this->constants  = array_merge($this->constants,  $env->constants);
 		return $this;
+	}
+
+	public function inyect_constants(Template $t) : Template {
+		$t->add_vars($this->constants);
+		return $t;
+	}
+
+	public function inyect_providers(Template $t) : Template {
+		$t->add_vars($this->providers);
+		return $t;
 	}
 
 	public function report(string $e_name, array $args = []) {
