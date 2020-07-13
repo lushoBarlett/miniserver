@@ -12,4 +12,6 @@ class Directive {
 
 	public function exception_event(\Exception $e) : void {}
 	public function error_event(\Error $e) : void {}
+
+	public function resolution_event(Resolution $r) : Resolution { return $r; }
 }

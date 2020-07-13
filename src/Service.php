@@ -32,9 +32,11 @@ class Service {
 		$r = $this->report_event("request", $r ?? new Request);
 
 		if ($r->action) {
-			$rsl = $this->router->resolve($r->action);
-			if (!$rsl->failed)
-				return $this->execute(
+			$rsl = $this->report_event("resolution", $this->router->resolve($r->action));
+			if ($rsl->failed)
+				$resp = Response::notFound();
+			else
+				$resp = $this->execute(
 					$r,
 					$rsl->value->cons,
 					$this->env->extend($rsl->value->env),
@@ -42,7 +44,7 @@ class Service {
 				);
 		}
 
-		return $this->report_event("response", Response::notFound());
+		return $this->report_event("response", $resp);
 	}
 
 	private function execute(Request $r, string $cons, Environment $env, array $route_args = []) : Response {
@@ -72,7 +74,7 @@ class Service {
 	}
 
 	private function check_response($response) : void {
-		if (!($value instanceof Response))
+		if (!($response instanceof Response))
 			throw new \Exception("Controller responded with a non Response type value");
 	}
 
