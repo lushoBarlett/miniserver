@@ -36,9 +36,9 @@ class Router {
 	private function _resolve(object $tree, array $path) {
 		if (!count($path)) {
 			if ($tree->val !== null)
-				return self::Resolution($tree->val);
+				return new Resolution($tree->val);
 
-			return self::not_resolved();
+			return Resolution::failed();
 		}
 
 		list($p, $ps) = $this->partition($path);
@@ -56,7 +56,7 @@ class Router {
 			return $res;
 		}
 		
-		return self::not_resolved();
+		return Resolution::failed();
 	}
 
 	public function resolve(string $url) {
@@ -89,18 +89,6 @@ class Router {
 			"val" => $val,
 			"children" => $children
 		];
-	}
-
-	private static function Resolution($controller, array $args = [], bool $failed = false) {
-		return (object)[
-			"value" => $controller,
-			"route_args" => $args,
-			"failed" => $failed
-		];
-	}
-
-	private static function not_resolved() {
-		return self::Resolution("", [], true);
 	}
 
 	public static function route_trim(string $route) : string {
