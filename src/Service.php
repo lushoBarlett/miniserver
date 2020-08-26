@@ -81,6 +81,7 @@ class Service {
 	private function execute(string $name, array $args = [], array $route_args = []) : Response {
 		ob_start();
 		try {
+			$resolved=[];
 			foreach($args as $a)
 				$resolved[] = (is_object($a) and get_class($a) == Constructable::class) ?
 					$a->construct() : $a;
