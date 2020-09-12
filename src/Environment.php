@@ -17,7 +17,7 @@ class Environment {
 
 			switch($code[0]) {
 			case '@':
-				assert($value instanceof IDirective);
+				assert($value instanceof Directive);
 				$this->directives[substr($code, 1)] = $value;
 				break;
 			case '#':
