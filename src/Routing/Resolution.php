@@ -1,6 +1,6 @@
 <?php
 
-namespace Server;
+namespace Server\Routing;
 
 class Resolution {
 

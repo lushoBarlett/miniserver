@@ -1,6 +1,6 @@
 <?php
 
-namespace Server;
+namespace Server\Routing;
 
 // TODO: optimize.
 // 1. adapt implementation from functional to imperative

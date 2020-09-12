@@ -3,6 +3,7 @@
 namespace Server;
 
 use \Server\Controllers\Node;
+use \Server\Routing\Router;
 
 class Service {
 
