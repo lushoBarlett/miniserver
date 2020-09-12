@@ -59,7 +59,7 @@ class FailController implements IController {
 	}
 }
 
-class ServiceDirectiveTest extends TestCase {
+class DirectiveTest extends TestCase {
 
 	private function gen_response(array $routes, Directive $d, Request $request) {
 		return (new Service(
