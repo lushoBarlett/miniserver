@@ -36,7 +36,18 @@ class Service {
 	// may be read.                                                            //
 	// ======================================================================= //
 
+	private function debug(string $output, State $s) {
+		if ($this->SERVICE_MODE == self::DEBUG) {
+			$debug = $output ? "DEBUG:\n $output" : "";
+			foreach ($s->error_list as $e)
+				$debug .= "\n$e";
+
+			$s->response->payload($debug . $s->response->get_payload());
+		}
+	}
+
 	private function report(string $event_name, State $s) : State {
+		ob_start();
 		try {
 			return $this->env->report($event_name, $s);
 		}
@@ -51,6 +62,8 @@ class Service {
 			$s->error_list[] = $e;
 			$s->response = $this->panic();
 		}
+		$output = ob_get_clean();
+		debug($output, $s);
 
 		return $s;
 	}
@@ -106,15 +119,10 @@ class Service {
 		}
 		$output = ob_get_clean();
 
-		if ($this->SERVICE_MODE == self::DEBUG) {
-			$debug = $output ? "DEBUG:\n $output" : "";
-			foreach ($s->error_list as $e)
-				$debug .= "\n$e";
-
-			$s->response->payload($debug . $s->response->get_payload());
-		}
+		debug($output, $s);
+		
 		// NOTE: you are not supposed to output to stdout in normal mode
-		else if(!empty($output)) {
+		if(!empty($output) and $this->SERVICE_MODE == Service::NORMAL) {
 			$s->error_list[] = new \Exception("Controller produced output: $output");
 			$s = $this->report("exception", $s);
 		}
