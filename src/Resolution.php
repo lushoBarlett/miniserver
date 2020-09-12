@@ -4,18 +4,20 @@ namespace Server;
 
 class Resolution {
 
-	public $cons;
+	public $node;
+	public $route;
 	public $args;
-	public $fail;
+	public $failed;
 
-	public function __construct($cons, array $args = [], bool $fail = false) {
-		$this->cons = $cons;
+	public function __construct($node, string $route, array $args = [], bool $failed = false) {
+		$this->node = $node;
+		$this->route = $route;
 		$this->args = $args;
-		$this->fail = $fail;
+		$this->failed = $failed;
 	}
 
 	public static function failed() {
-		return new self("", [], true);
+		return new self(null, "", [], true);
 	}
 }
 

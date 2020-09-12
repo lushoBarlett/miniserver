@@ -2,6 +2,10 @@
 
 namespace Server\Controllers;
 
+use Server\Environment;
+use Server\Request;
+use Server\Response;
+
 class ConstController implements IController {
 
 	private $env;

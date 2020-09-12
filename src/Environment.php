@@ -8,7 +8,7 @@ class Environment {
 	private $providers = [];
 	private $constants = [];
 
-	public function __construct(array $env) {
+	public function __construct(array $env = []) {
 		// TODO: proper error handling
 		foreach($env as $code => $value) {
 			assert(!empty($code));
@@ -43,11 +43,19 @@ class Environment {
 		return $this->constants[$c] ?? null;
 	}
 
-	public function extend(self $env) : self {
-		$this->directives = array_merge($this->directives, $env->directives);
-		$this->providers  = array_merge($this->providers,  $env->providers);
-		$this->constants  = array_merge($this->constants,  $env->constants);
-		return $this;
+	// NOTE: creates new environment in case you wanna answer another request
+	// it will not override this environment
+	public function extend($env) : self {
+		$env = $env ?? new self;
+		if (is_array($env))
+			$env = new self($env);
+
+		$e = new self;
+
+		$e->directives = array_merge($this->directives, $env->directives);
+		$e->providers  = array_merge($this->providers,  $env->providers);
+		$e->constants  = array_merge($this->constants,  $env->constants);
+		return $e;
 	}
 
 	public function inyect_constants(Template $t) : Template {
@@ -60,13 +68,11 @@ class Environment {
 		return $t;
 	}
 
-	public function report(string $e_name, array $args = []) {
-		foreach($this->directives as $d) {
-			$result = $d->{"{$e_name}_event"}(...$args);
-			// NOTE: does not work with intentional null result
-			if($result)
-				$args[0] = $result;
-		}
+	public function report(string $e_name, State $s) : State {
+		foreach($this->directives as $d)
+			$s = $d->{"{$e_name}_event"}($s);
+
+		return $s;
 	}
 }
 

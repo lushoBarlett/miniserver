@@ -12,9 +12,9 @@ class StatusDirective extends Directive {
 		$this->proc = $proc;
 	}
 
-	public function response_event(Response $r) : Response {
-		if ($r->get_status() == $this->status)
-			return ($this->proc)($r);
+	public function response_event(State $s) : State {
+		if ($s->response->get_status() == $this->status)
+			$s->response = ($this->proc)($s->response);
 
 		return $r;
 	}

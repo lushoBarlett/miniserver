@@ -24,13 +24,16 @@ class Request {
 	public $json;
 	public $cookies;
 	public $files;
+	// filled by Resolution arguments
+	public $args = [];
 
 	public function __construct(?array $debug = null) {
-		if ($debug)
+		if ($debug !== null) {
 			foreach ($debug as $k => $v)
 				$this->{$k} = $v;
-		else
+		} else {
 			$this->get();
+		}
 	}
 
 	private function get() {

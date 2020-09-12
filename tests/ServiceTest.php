@@ -3,17 +3,24 @@
 namespace Server;
 
 use PHPUnit\Framework\TestCase;
-use Cologger\Logger;
 
+use Server\Controllers\IController;
 class TestController implements IController {
 
-	public $path;
-	public function __construct(string $path) {
-		$this->path = $path;
+	public $env;
+	public function __construct(Environment $env) {
+		$this->env = $env;
 	}
 
-	public function process(Request $request) : Response {
-		return Response::withText($this->path);
+	public function __service_init(Request $request) : Response {
+		return Response::withText($this->env->constant("route"));
+	}
+
+	public static function Node(string $route) : object {
+		return (object)[
+			"cons" => self,
+			"env" => new Environment(["route" => $route])
+		];
 	}
 }
 
@@ -33,14 +40,17 @@ class Dep implements IController {
 class ServiceTest extends TestCase {
 
 	private function gen_response(array $routes, Request $request) {
-		return (new Service($routes, $request))->respond();
+		return (new Service(
+			new Router($routes)
+		))->respond($request);
 	}
+
 	private function ping(string $route) {
 		return new Request(["action" => $route]);
 	}
 
 	public function testControllerFactory() {
-		$c = Service::Controller(TestController::class, ["/argument"]);
+		$c = Controller(TestController::class, ["/argument"]);
 
 		$this->assertEquals(TestController::class, $c->name);
 		$this->assertEquals(["/argument"], $c->args);
@@ -48,7 +58,7 @@ class ServiceTest extends TestCase {
 
 	public function testServiceResponse() {
 		$response = $this->gen_response(
-			["/path" => Service::Controller(TestController::class, ["/path"])],
+			["/path" => TestController::Node("/path")],
 			$this->ping("/path")
 		);
 		$this->assertEquals("/path", $response->get_payload());

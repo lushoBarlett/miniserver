@@ -10,14 +10,14 @@ class BaseUrlDirective extends Directive {
 		$this->base = route_trim($base);
 	}
 
-	public function request_event(Request $r) : Request {
-		$action = route_trim($r->action);
+	public function request_event(State $s) {
+		$action = route_trim($s->request->action);
 
-		$r->action =
+		$s->request->action =
 			substr($action, 0, strlen($this->base)) == $this->base ?
 			substr($action, strlen($base)) : null;
 
-		return $r;
+		return $s;
 	}
 }
 

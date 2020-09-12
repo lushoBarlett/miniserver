@@ -6,13 +6,12 @@ use PHPUnit\Framework\TestCase;
 
 class RouterTest extends TestCase {
 
-	public function testResolveObject() {
-		$r = new Router;
-		$resolution = $r->resolve("");
-
-		$this->assertObjectHasAttribute('value', $resolution);
-		$this->assertObjectHasAttribute('route_args', $resolution);
-		$this->assertObjectHasAttribute('failed', $resolution);
+	public function testRoot() {
+		$routes = [
+			"/" => 1
+		];
+		$r = new Router($routes);
+		$this->assertEquals(1, $r->resolve("/")->cons);
 	}
 
 	public function testPathResolutionGenericValues() {
@@ -22,9 +21,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals("stuff", $r->resolve("/generic/path")->value);
-		
-		$this->assertEquals(3, $r->resolve("/more/path")->value);
+		$this->assertEquals("stuff", $r->resolve("/generic/path")->cons);
+		$this->assertEquals(3, $r->resolve("/more/path")->cons);
 	}
 	
 	public function testMixedPaths() {
@@ -34,9 +32,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(1, $r->resolve("path/1")->value);
-		
-		$this->assertEquals(2, $r->resolve("path/2")->value);
+		$this->assertEquals(1, $r->resolve("path/1")->cons);
+		$this->assertEquals(2, $r->resolve("path/2")->cons);
 	}
 	
 	public function testPartialPaths() {
@@ -46,9 +43,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(1, $r->resolve("partial")->value);
-		
-		$this->assertEquals(2, $r->resolve("partial/path")->value);
+		$this->assertEquals(1, $r->resolve("partial")->cons);
+		$this->assertEquals(2, $r->resolve("partial/path")->cons);
 	}
 	
 	public function testFail() {
@@ -62,34 +58,32 @@ class RouterTest extends TestCase {
 
 	public function testRouteWithArguments() {
 		$routes = [
-			"some/<argument>/path" => 1
+			"some/@value/path" => 1
 		];
 		$r = new Router($routes);
 
-		// incomplete
 		$this->assertTrue($r->resolve("some/value/")->failed);
-
-		$this->assertEquals(["value"], $r->resolve("some/value/path")->route_args);
+		$this->assertEquals(["value" => "value"], $r->resolve("some/value/path")->args);
 	}
 	
 	public function testRouteWithMultipleArguments() {
 		$routes = [
-			"a/<argument>/c/<argument>" => 1
+			"a/@b/c/@d" => 1
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(["b","d"], $r->resolve("/a/b/c/d/")->route_args);
+		$this->assertEquals(["b" => "b", "d" => "d"], $r->resolve("/a/b/c/d/")->args);
 	}
 	
 	public function testOverloadedDefinitions() {
 		$routes = [
-			"/path/<argument>/" => 1,
+			"/path/@argument/" => 1,
 			"/path/specific/" => 2
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(2, $r->resolve("path/specific")->value);
-		$this->assertEquals(1, $r->resolve("path/different")->value);
+		$this->assertEquals(2, $r->resolve("path/specific")->cons);
+		$this->assertEquals(1, $r->resolve("path/different")->cons);
 	}
 
 	public function testSubrouteFirst() {
@@ -99,8 +93,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(2, $r->resolve("path/specific")->value);
-		$this->assertEquals(1, $r->resolve("path")->value);
+		$this->assertEquals(2, $r->resolve("path/specific")->cons);
+		$this->assertEquals(1, $r->resolve("path")->cons);
 	}
 }
 

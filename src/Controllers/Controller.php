@@ -2,6 +2,10 @@
 
 namespace Server\Controllers;
 
+use Server\Environment;
+use Server\Request;
+use Server\Response;
+
 class Controller implements IController {
 
 	private $env;
@@ -11,17 +15,17 @@ class Controller implements IController {
 	}
 
 	public function __service_init(Request $request) : Response {
-		switch(strtolower($request->method)) {
-		case 'get':
-		case 'post':
-		case 'put':
-		case 'patch':
-		case 'delete':
-		case 'head':
-		case 'options':
-		case 'trace':
-		case 'connect':
-			return $this->{$request-method}(...func_get_args());
+		switch($request->method) {
+		case Request::GET:
+		case Request::POST:
+		case Request::PUT:
+		case Request::PATCH:
+		case Request::DELETE:
+		case Request::HEAD:
+		case Request::OPTIONS:
+		case Request::TRACE:
+		case Request::CONNECT:
+			return $this->{$request-method}($request);
 		}
 		return Response::serverError();
 	}

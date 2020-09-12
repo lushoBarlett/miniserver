@@ -10,38 +10,35 @@ namespace Server;
 // Maybe this can be set as an option
 class Router {
 
-	const ARGUMENT = "@";
-
 	/*
 	 * # Abstraction
 	 * data URLTree Val = Node Val * [URLTree Val]
 	 * data Val a = Defined a | Undefined
 	 *
 	 * # Implementation
-	 * $node = [ "val" => ?$val, "children" => $children ];
+	 * $node = [ "cons" => ?$cons, "children" => $children ];
 	 */
 	private $tree;
 
 	public function __construct(array $routes = []) {
 		$this->tree = self::Node();
-		foreach($routes as $r => $val)
-			$this->tree = $this->_add($this->tree, self::route_split($r), $val);
+		foreach($routes as $r => $cons)
+			$this->tree = $this->_add($this->tree, Route::split($r), $cons, $r);
 	}
 
-	private function partition(array $path) {
+	private static function partition(array $path) {
 		return [$path[0], array_slice($path, 1)];
 	}
 
-	/* res :: URLTree -> [String] -> Maybe a */
 	private function _resolve(object $tree, array $path) {
-		if (!count($path)) {
-			if ($tree->val !== null)
-				return new Resolution($tree->val);
+		if (empty($path)) {
+			if ($tree->cons !== null)
+				return new Resolution($tree->cons, $tree->route);
 
 			return Resolution::failed();
 		}
 
-		list($p, $ps) = $this->partition($path);
+		list($p, $ps) = self::partition($path);
 
 		// specific route defined gets priority
 		if (isset($tree->children[$p])) {
@@ -49,61 +46,43 @@ class Router {
 		}
 
 		// argument route defined
-		if (isset($tree->children[self::ARGUMENT])) {
-			$res = $this->_resolve($tree->children[self::ARGUMENT], $ps);
-			$res->route_args[] = $p;
-
-			return $res;
+		if (isset($tree->children[Route::ARGUMENT])) {
+			return $this->_resolve($tree->children[Route::ARGUMENT], $ps);
 		}
 		
 		return Resolution::failed();
 	}
 
 	public function resolve(string $url) {
-		$res = $this->_resolve($this->tree, self::route_split($url));
-		
-		// reverse the arguments, they were inserted backwards
-		$res->route_args = array_reverse($res->route_args);
-		
+		$res = $this->_resolve($this->tree, Route::split($url));
+		$res->args = Route::arguments($res->route, $url);
 		return $res;
 	}
     
-	/* _add :: URLTree -> [String] -> a -> URLTree */
-	private function _add(object $tree, array $path, $val) {
-		if (!count($path))
-			return self::Node($val, $tree->children);
-
-		list($p, $ps) = $this->partition($path);
-
-		if (!isset($tree->children[$p])) {
-			$tree->children[$p] = $this->_add(self::Node(), $ps, $val);
+	private function _add(object $tree, array $path, $cons, string $route) {
+		if (empty($path)) {
+			$tree->cons = $cons;
+			$tree->route = $route;
 			return $tree;
 		}
 
-		$tree->children[$p] = $this->_add($tree->children[$p], $ps, $val);
+		list($p, $ps) = self::partition($path);
+
+		// strip argument name
+		$p = !Route::is_argument($p) ? $p : Route::ARGUMENT;
+
+		$tree->children[$p] = $this->_add(
+			$tree->children[$p] ?? self::Node(), $ps, $cons, $route
+		);
         	return $tree;
 	}
 
-	private static function Node($val = null, array $children = []) {
+	private static function Node($cons = null, array $children = [], ?string $route = null) {
 		return (object)[
-			"val" => $val,
-			"children" => $children
+			"cons" => $cons,
+			"children" => $children,
+			"route" => null
 		];
-	}
-
-	public static function route_trim(string $route) : string {
-		return trim($route, '/ ');
-	}
-
-	public static function route_split(string $route) : array {
-		return explode('/', self::route_trim($route));
-	}
-
-	public static function route_arguments(string $route) : array {
-		return array_map(
-			function (string $r) : bool { return $r === self::ARGUMENT; },
-			self::route_split($route)
-		);
 	}
 }
 
