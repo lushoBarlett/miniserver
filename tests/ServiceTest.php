@@ -43,8 +43,8 @@ class ServiceTest extends TestCase {
 	public function testControllerFactory() {
 		$c = Controller::Node(TestController::class, ["route" => "/argument"]);
 
-		$this->assertEquals(TestController::class, $c->cons);
-		$this->assertEquals(new Environment(["route" => "/argument"]), $c->env);
+		$this->assertEquals(Controller::class, $c->cons);
+		$this->assertEquals("/argument", $c->env->constant("route"));
 	}
 
 	public function testServiceResponse() {

@@ -31,7 +31,7 @@ class Environment {
 		}
 	}
 
-	public function directive(string $d) : ?IDirective {
+	public function directive(string $d) : ?Directive {
 		return $this->directives[$d] ?? null;
 	}
 

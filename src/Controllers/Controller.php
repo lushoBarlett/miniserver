@@ -25,24 +25,21 @@ class Controller implements IController {
 		case Request::OPTIONS:
 		case Request::TRACE:
 		case Request::CONNECT:
-			return $this->{$request-method}($request);
+			$cons = $this->env->constant("__controller_construction");
+			$controller = new $cons($this->env);
+
+			return method_exists($controller, $request->method)
+			       ? $controller->{$request->method}($request)
+			       : Response::notFound();
 		}
 		return Response::serverError();
 	}
 
-	public function get(Request $r)     : Response { return Response::notFound(); }
-	public function post(Request $r)    : Response { return Response::notFound(); }
-	public function put(Request $r)     : Response { return Response::notFound(); }
-	public function patch(Request $r)   : Response { return Response::notFound(); }
-	public function delete(Request $r)  : Response { return Response::notFound(); }
-	public function head(Request $r)    : Response { return Response::notFound(); }
-	public function options(Request $r) : Response { return Response::notFound(); }
-	public function trace(Request $r)   : Response { return Response::notFound(); }
-	public function connect(Request $r) : Response { return Response::notFound(); }
-
 	public static function Node(...$args) : Node {
-		list ($cons, $env) = $args;
-		return new Node($cons, $env);
+		$cons = $args[0];
+		$env = $args[1] ?? [];
+		$env["__controller_construction"] = $cons;
+		return new Node(self::class, $env);
 	}
 }
 
