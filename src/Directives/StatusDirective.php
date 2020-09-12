@@ -2,6 +2,8 @@
 
 namespace Server\Directives;
 
+use Server\State;
+
 class StatusDirective extends Directive {
 
 	private $status;
@@ -12,7 +14,7 @@ class StatusDirective extends Directive {
 		$this->proc = $proc;
 	}
 
-	public function response_event(State $s) : State {
+	public function response(State $s) : State {
 		if ($s->response->get_status() == $this->status)
 			$s->response = ($this->proc)($s->response);
 

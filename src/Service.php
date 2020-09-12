@@ -65,7 +65,8 @@ class Service {
 		// NOTE: null action is considered error 404
 		if ($s->request->action === null) {
 			$s->response = Response::notFound();
-			return $this->report("response", $s);
+			$s = $this->report("response", $s);
+			return $s->response;
 		}
 
 		$s->resolution = $this->router->resolve($s->request->action);

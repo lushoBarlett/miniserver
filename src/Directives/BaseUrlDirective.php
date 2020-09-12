@@ -3,6 +3,7 @@
 namespace Server\Directives;
 
 use Server\Routing\Route;
+use Server\State;
 
 class BaseUrlDirective extends Directive {
 
@@ -12,12 +13,12 @@ class BaseUrlDirective extends Directive {
 		$this->base = Route::trim($base);
 	}
 
-	public function request_event(State $s) {
+	public function request(State $s) : State {
 		$action = Route::trim($s->request->action);
 
-		$s->request->action =
-			substr($action, 0, strlen($this->base)) == $this->base ?
-			substr($action, strlen($base)) : null;
+		$s->request->action = substr($action, 0, strlen($this->base)) == $this->base
+				      ? substr($action, strlen($this->base))
+				      : null;
 
 		return $s;
 	}

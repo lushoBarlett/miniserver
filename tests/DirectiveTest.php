@@ -5,6 +5,9 @@ namespace Server;
 use PHPUnit\Framework\TestCase;
 
 use Server\Directives\Directive;
+use Server\Directives\StatusDirective;
+use Server\Directives\BaseUrlDirective;
+
 use Server\Controllers\IController;
 use Server\Controllers\Node;
 
@@ -15,6 +18,7 @@ use Server\Routing\Resolution;
 class ADirective extends Directive {
 
 	public function request(State $s) : State {
+		// NOTE: modifying the object for the test to work
 		$s->request->action = "/other/path";
 		return $s;
 	}
@@ -73,7 +77,7 @@ class DirectiveTest extends TestCase {
 
 	public function testRequestEvent() {
 		$request = $this->ping("/some/path");
-		// NOTE: object is always passed by reference
+		// NOTE: object is passed by reference
 		$this->gen_response([], new ADirective, $request);
 		$this->assertEquals("/other/path", $request->action);
 	}
@@ -98,5 +102,29 @@ class DirectiveTest extends TestCase {
 	public function testResolutionEvent() {
 		$response = $this->gen_response([], new BDirective, $this->ping("/some/path"));
 		$this->assertEquals("FAILED TO FAIL", $response->get_payload());
+	}
+
+	public function testStatusDirective() {
+		$dir = new StatusDirective(404, function(Response $r) {
+			return Response::withText("NOT FOUND");
+		});
+
+		$response = $this->gen_response([], $dir, $this->ping(""));
+
+		$this->assertEquals("NOT FOUND", $response->get_payload());
+	}
+
+	public function testBaseUrlDirective() {
+		// I'm lazy to write another controller
+		$routes = ["path" => FailController::Node()];
+		$dir = new BaseUrlDirective("test");
+
+		$response = $this->gen_response($routes, $dir, $this->ping("/test/path"));
+
+		$this->assertEquals("FAILED TO FAIL", $response->get_payload());
+
+		$response = $this->gen_response($routes, $dir, $this->ping("path"));
+		
+		$this->assertEquals(404, $response->get_status());
 	}
 }
