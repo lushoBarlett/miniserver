@@ -12,7 +12,6 @@ class Node {
 		$this->value = $value;
 		$this->children = $children;
 		$this->route = $route;
-		
 	}
 }
 

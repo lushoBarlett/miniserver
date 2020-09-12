@@ -2,16 +2,18 @@
 
 namespace Server\Directives;
 
+use Server\Routing\Route;
+
 class BaseUrlDirective extends Directive {
 
 	private $base;
 
 	public function __construct(string $base) {
-		$this->base = route_trim($base);
+		$this->base = Route::trim($base);
 	}
 
 	public function request_event(State $s) {
-		$action = route_trim($s->request->action);
+		$action = Route::trim($s->request->action);
 
 		$s->request->action =
 			substr($action, 0, strlen($this->base)) == $this->base ?

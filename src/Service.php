@@ -60,7 +60,7 @@ class Service {
 		$s->resolution = $this->router->resolve($s->request->action);
 		$s = $this->report("resolution", $s);
 
-		if ($s->resolution->failed) {
+		if (!$s->resolution) {
 			$s->response = Response::notFound();
 			$s = $this->report("response", $s);
 			return $s->response;

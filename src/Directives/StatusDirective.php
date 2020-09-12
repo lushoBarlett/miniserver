@@ -16,7 +16,7 @@ class StatusDirective extends Directive {
 		if ($s->response->get_status() == $this->status)
 			$s->response = ($this->proc)($s->response);
 
-		return $r;
+		return $s;
 	}
 }
 
