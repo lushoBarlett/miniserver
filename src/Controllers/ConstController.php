@@ -18,10 +18,10 @@ class ConstController implements IController {
 		return $this->env->constant("resp");
 	}
 
-	public static function Node(Response $r) : Node {
+	public static function Node(...$args) : Node {
+		list($r) = $args;
 		return new Node(self::class, ["resp" => $r]);
 	}
 }
 
 ?>
-

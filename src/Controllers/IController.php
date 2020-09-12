@@ -13,3 +13,5 @@ interface IController {
 	// and returns a Node object
 	public static function Node(...$args) : Node;
 }
+
+?>

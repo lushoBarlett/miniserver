@@ -6,6 +6,10 @@ use PHPUnit\Framework\TestCase;
 
 use Server\Directives\Directive;
 use Server\Controllers\IController;
+use Server\Controllers\Node;
+
+use Server\Routing\Router;
+use Server\Routing\Resolution;
 
 class ADirective extends Directive {
 
@@ -50,8 +54,8 @@ class FailController implements IController {
 		return Response::withText("FAILED TO FAIL")->status(200);
 	}
 
-	public static function Node(...$args) : object {
-		return (object)["cons" => self::class, "env" => null];
+	public static function Node(...$args) : Node {
+		return new Node(self::class);
 	}
 }
 

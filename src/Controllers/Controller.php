@@ -40,7 +40,8 @@ class Controller implements IController {
 	public function trace(Request $r)   : Response { return Response::notFound(); }
 	public function connect(Request $r) : Response { return Response::notFound(); }
 
-	public static function Node(string $cons, ?Environment $env = null) : Node {
+	public static function Node(...$args) : Node {
+		list ($cons, $env) = $args;
 		return new Node($cons, $env);
 	}
 }

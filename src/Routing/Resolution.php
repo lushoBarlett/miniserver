@@ -4,12 +4,12 @@ namespace Server\Routing;
 
 class Resolution {
 
-	public $node;
+	public $value;
 	public $route;
 	public $args;
 
-	public function __construct(Node $node, string $route, array $args = []) {
-		$this->node = $node;
+	public function __construct($value, string $route, array $args = []) {
+		$this->value = $value;
 		$this->route = $route;
 		$this->args = $args;
 	}

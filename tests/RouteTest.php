@@ -6,6 +6,8 @@ include "vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
 
+use Server\Routing\Route;
+
 class RouteTest extends TestCase {
 
 	public function path() {

@@ -14,3 +14,5 @@ class Directive {
 
 	public function resolution_event(State $s) : State { return $s; }
 }
+
+?>

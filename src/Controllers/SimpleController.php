@@ -18,7 +18,8 @@ class SimpleController implements IController {
 		return ($this->env->provider("proc"))($r);
 	}
 
-	public static function Node(callable $proc) {
+	public static function Node(...$args) : Node {
+		list($proc) = $args;
 		return new Node(self::class, ["#proc" => $proc]);
 	}
 }

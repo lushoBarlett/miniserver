@@ -34,3 +34,5 @@ class FileTest extends TestCase {
 
 	// TODO: test File::save
 }
+
+?>

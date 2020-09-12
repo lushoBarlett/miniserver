@@ -5,6 +5,12 @@ namespace Server;
 use PHPUnit\Framework\TestCase;
 
 use Server\Controllers\IController;
+use Server\Controllers\Controller;
+use Server\Controllers\SimpleController;
+use Server\Controllers\Node;
+
+use Server\Routing\Router;
+
 class TestController implements IController {
 
 	public $env;
@@ -16,24 +22,9 @@ class TestController implements IController {
 		return Response::withText($this->env->constant("route"));
 	}
 
-	public static function Node(string $route) : object {
-		return (object)[
-			"cons" => self,
-			"env" => new Environment(["route" => $route])
-		];
-	}
-}
-
-class Dep implements IController {
-	
-	public $dep;
-	public function __construct() {
-		$this->dep = func_get_args();
-	}
-
-	public function process(Request $request) : Response {
-		// use serialization to preserve class names and private fields
-		return Response::withText(serialize($this->dep));
+	public static function Node(...$args) : Node {
+		list($route) = $args;
+		return new Node(self::class, ["route" => $route]);
 	}
 }
 
@@ -50,10 +41,10 @@ class ServiceTest extends TestCase {
 	}
 
 	public function testControllerFactory() {
-		$c = Controller(TestController::class, ["/argument"]);
+		$c = Controller::Node(TestController::class, ["/argument"]);
 
-		$this->assertEquals(TestController::class, $c->name);
-		$this->assertEquals(["/argument"], $c->args);
+		$this->assertEquals(TestController::class, $c->cons);
+		$this->assertEquals(new Environment(["route" => "/argument"]), $c->env);
 	}
 
 	public function testServiceResponse() {
@@ -67,7 +58,7 @@ class ServiceTest extends TestCase {
 	public function testSimpleController() {
 		$response = $this->gen_response(
 			[
-				"/path" => Service::SimpleController(
+				"/path" => SimpleController::Node(
 					function($r) { return Response::withText("text"); }
 				)
 			],
@@ -80,7 +71,7 @@ class ServiceTest extends TestCase {
 		$response = $this->gen_response(
 			[
 				"/path/<argument>/<argument>/<argument>/" =>
-				Service::SimpleController(
+				SimpleController::Node(
 					function($r, $a, $b, $c) {
 						return Response::withText($a . $b . $c);
 					}
@@ -92,26 +83,26 @@ class ServiceTest extends TestCase {
 	}
 
 	public function testControllerError() {
-		$routes = [
-			"/nores" => Service::SimpleController(
+		$routes = new Router([
+			"/nores" => SimpleController::Node(
 				function($r) { return "not response"; }
 			),
-			"/excep" => Service::SimpleController(
+			"/excep" => SimpleController::Node(
 				function($r) { throw new \Exception; }
 			)
-		];
+		]);
 
-		$service = new Service($routes, $this->ping("/nores"));
+		$service = new Service($routes);
 		$service->log = __DIR__ . "/__test.log";
-		$response = $service->respond();
+		$response = $service->respond($this->ping("/nores"));
 		
 		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
 		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
 		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
 
-		$service = new Service($routes, $this->ping("/excep"));
+		$service = new Service($routes);
 		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
-		$response = $service->respond();
+		$response = $service->respond($this->ping("/excep"));
 		
 		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
 		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
@@ -121,10 +112,10 @@ class ServiceTest extends TestCase {
 	public function testError404Handler() {
 		$response = $this->gen_response(
 			[
-				"/path" => Service::SimpleController(
+				"/path" => SimpleController::Node(
 					function($r) { return Response::withText(""); }
 				),
-				"<404>" => Service::SimpleController(
+				"<404>" => SimpleController::Node(
 					function($r) { return Response::withText("handled gracefully"); }
 				)
 			],
@@ -136,10 +127,10 @@ class ServiceTest extends TestCase {
 	public function testError500Handler() {
 		$response = $this->gen_response(
 			[
-				"/excep" => Service::SimpleController(
+				"/excep" => SimpleController::Node(
 					function($r) { throw \Exception; }
 				),
-				"<500>" => Service::SimpleController(
+				"<500>" => SimpleController::Node(
 					function($r) { return Response::withText("handled gracefully"); }
 				)
 			],
@@ -151,10 +142,10 @@ class ServiceTest extends TestCase {
 	public function testPanic() {
 		$response = $this->gen_response(
 			[
-				"/excep" => Service::SimpleController(
+				"/excep" => SimpleController::Node(
 					function($r) { throw \Exception; }
 				),
-				"<500>" => Service::SimpleController(
+				"<500>" => SimpleController::Node(
 					function($r) { return "non response"; }
 				)
 			],
@@ -164,42 +155,23 @@ class ServiceTest extends TestCase {
 	}
 
 	public function testBaseUrl() {
-		$routes = [
-			"/route" => Service::SimpleController(
+		$routes = new Router([
+			"/route" => SimpleController::Node(
 				function($r) { return Response::withText("test"); }
 			)
-		];
+		]);
 
-		$service = new Service($routes, $this->ping("/route"));
+		$service = new Service($routes);
 		$service->base_url = "/my/";
 
-		$response = $service->respond();
+		$response = $service->respond($this->ping("/route"));
 		$this->assertEquals(Response::notFound()->get_status(), $response->get_status());
 
-		$service = new Service($routes, $this->ping("/my/route"));
+		$service = new Service($routes);
 		$service->base_url = "/my/";
 
-		$response = $service->respond();
+		$response = $service->respond($this->ping("/my/route"));
 		$this->assertEquals("test", $response->get_payload());
-	}
-
-	public function testControllerWithConstructable() {
-		$response = $this->gen_response(
-			[
-				"/route" => Service::Controller(
-					Dep::class,
-					[
-						new Constructable(TestController::class, "/route"),
-						new Constructable(Dep::class, new Constructable(Dep::class, "s", 1), null)
-					]
-				)
-			],
-			$this->ping("route")
-		);
-		$this->assertEquals(
-			[new TestController("/route"), new Dep(new Dep("s", 1), null)],
-			unserialize($response->get_payload())
-		);
 	}
 }
 

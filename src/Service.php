@@ -75,7 +75,7 @@ class Service {
 	}
 
 	private function execute(State $s) : State {
-		$node = $s->resolution->node;
+		$node = $s->resolution->value;
 		$node->env = $this->env->extend($node->env);
 
 		ob_start();

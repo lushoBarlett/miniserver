@@ -45,7 +45,10 @@ class Router {
 
 	public function resolve(string $url) {
 		$res = $this->_resolve($this->tree, Route::split($url));
-		$res->args = Route::arguments($res->route, $url);
+
+		if ($res)
+			$res->args = Route::arguments($res->route, $url);
+
 		return $res;
 	}
     

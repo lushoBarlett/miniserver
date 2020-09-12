@@ -4,6 +4,8 @@ namespace Server;
 
 use PHPUnit\Framework\TestCase;
 
+use Server\Routing\Router;
+
 class RouterTest extends TestCase {
 
 	public function testRoot() {
@@ -11,7 +13,7 @@ class RouterTest extends TestCase {
 			"/" => 1
 		];
 		$r = new Router($routes);
-		$this->assertEquals(1, $r->resolve("/")->cons);
+		$this->assertEquals(1, $r->resolve("/")->value);
 	}
 
 	public function testPathResolutionGenericValues() {
@@ -21,8 +23,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals("stuff", $r->resolve("/generic/path")->cons);
-		$this->assertEquals(3, $r->resolve("/more/path")->cons);
+		$this->assertEquals("stuff", $r->resolve("/generic/path")->value);
+		$this->assertEquals(3, $r->resolve("/more/path")->value);
 	}
 	
 	public function testMixedPaths() {
@@ -32,8 +34,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(1, $r->resolve("path/1")->cons);
-		$this->assertEquals(2, $r->resolve("path/2")->cons);
+		$this->assertEquals(1, $r->resolve("path/1")->value);
+		$this->assertEquals(2, $r->resolve("path/2")->value);
 	}
 	
 	public function testPartialPaths() {
@@ -43,8 +45,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(1, $r->resolve("partial")->cons);
-		$this->assertEquals(2, $r->resolve("partial/path")->cons);
+		$this->assertEquals(1, $r->resolve("partial")->value);
+		$this->assertEquals(2, $r->resolve("partial/path")->value);
 	}
 	
 	public function testFail() {
@@ -53,7 +55,7 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertTrue($r->resolve("non/path")->failed);
+		$this->assertNull($r->resolve("non/path"));
 	}
 
 	public function testRouteWithArguments() {
@@ -62,7 +64,7 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertTrue($r->resolve("some/value/")->failed);
+		$this->assertNull($r->resolve("some/value/"));
 		$this->assertEquals(["value" => "value"], $r->resolve("some/value/path")->args);
 	}
 	
@@ -82,8 +84,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(2, $r->resolve("path/specific")->cons);
-		$this->assertEquals(1, $r->resolve("path/different")->cons);
+		$this->assertEquals(2, $r->resolve("path/specific")->value);
+		$this->assertEquals(1, $r->resolve("path/different")->value);
 	}
 
 	public function testSubrouteFirst() {
@@ -93,8 +95,8 @@ class RouterTest extends TestCase {
 		];
 		$r = new Router($routes);
 
-		$this->assertEquals(2, $r->resolve("path/specific")->cons);
-		$this->assertEquals(1, $r->resolve("path")->cons);
+		$this->assertEquals(2, $r->resolve("path/specific")->value);
+		$this->assertEquals(1, $r->resolve("path")->value);
 	}
 }
 

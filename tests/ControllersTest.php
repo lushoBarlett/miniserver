@@ -8,6 +8,7 @@ use Server\Directives\Directive;
 use Server\Controllers\ConstController;
 use Server\Controllers\SimpleController;
 use Server\Controllers\Controller;
+use Server\Routing\Router;
 
 class TestDirective extends Directive {
 	public function exception_event(State $s) : State {
@@ -58,3 +59,5 @@ class ControllersTest extends TestCase {
 	}
 
 }
+
+?>
