@@ -11,20 +11,15 @@ class Environment {
 	private $constants = [];
 
 	public function __construct(array $env = []) {
-		// TODO: proper error handling
+		// TODO: error handling
 		foreach($env as $code => $value) {
-			assert(!empty($code));
-			assert($code != '#');
-			assert($code != '@');
-
 			switch($code[0]) {
 			case '@':
-				assert($value instanceof Module);
+				// should be a module
 				$this->modules[substr($code, 1)] = $value;
 				break;
 			case '#':
-				// TODO: allow classes?
-				assert(is_callable($value));
+				// should be a callable
 				$this->providers[substr($code, 1)] = $value;
 				break;
 			default:
