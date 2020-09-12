@@ -4,48 +4,30 @@ namespace Server;
 
 class Template {
 
-	private $template = "";
+	private $filename = "";
 	private $vars = [];
 
-	public function __construct(string $template) {
-		$this->template = $template;
+	public function __construct(string $filename) {
+		$this->filename = $filename;
 	}
 
-	public function addVar(string $var, $value) : void {
-		$this->vars = array_merge(
-			$this->vars,
-			[$var => $value]
-		);
+	public function add_var(string $var, $value) : void {
+		$this->vars[$var] = $value;
 	}
 
-	public function addVars(array $variables) : void {
-		$this->vars = array_merge(
-			$this->vars,
-			$variables
-		);
+	public function add_vars(array $variables) : void {
+		$this->vars = array_merge($this->vars, $variables);
 	}
 
 	public function render() : string {
-		/* Set scope for evaluation */
+		// set scope for evaluation
 		foreach($this->vars as $var => $value)
 			${$var} = $value;
 
+		// TODO: error handling
 		ob_start();
-			try{
-				eval("?>{$this->template}");
-			}
-			catch(\Exception $e) {
-				echo $e;
-			}
-			catch(\Error $e) {
-				echo $e;
-			}
-			finally {
-				$output = ob_get_contents();
-			}
-		ob_end_clean();
-		
-		return $output;
+			include $this->filename;
+		return ob_get_clean();
 	}
 }
 

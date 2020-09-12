@@ -6,19 +6,11 @@ use PHPUnit\Framework\TestCase;
 
 class RequestTest extends TestCase {
 
-	/**
-	 * Tests wether instanciating the class
-	 * as is breaks the execution or not
-	 */
 	public function testNoBreak() {
 		$r = new Request;
-		$this->assertEquals(__NAMESPACE__ . "\\Request", get_class($r));
+		$this->assertInstanceOf(Request::class, $r);
 	}
 
-	/**
-	 * Tests that a failed property
-	 * should still exist
-	 */
 	public function testPersistentProperty() {
 		$r = new Request;
 		$this->assertObjectHasAttribute("action", $r);
@@ -33,10 +25,6 @@ class RequestTest extends TestCase {
 		$this->assertObjectHasAttribute("files", $r);
 	}
 	
-	/**
-	 * Tests that a new property
-	 * should be added
-	 */
 	public function testNewProperty() {
 		$r = new Request([
 			"new" => "prop"
@@ -45,12 +33,22 @@ class RequestTest extends TestCase {
 		$this->assertObjectHasAttribute("new", $r);
 		$this->assertEquals("prop", $r->new);
 	}
+
+	public function testDontCollectPropertiesOnDebug() {
+		$r = new Request([]);
+
+		$this->assertNull($r->action);
+		$this->assertNull($r->secure);
+		$this->assertNull($r->method);
+		$this->assertNull($r->get);
+		$this->assertNull($r->post);
+		$this->assertNull($r->raw);
+		$this->assertNull($r->json);
+		$this->assertNull($r->contentType);
+		$this->assertNull($r->cookies);
+		$this->assertNull($r->files);
+	}
 	
-	/**
-	 * Tests that a new property
-	 * with the same name as a predefined one
-	 * prevails over the latter
-	 */
 	public function testOverwriteProperty() {
 		$r = new Request([
 			"action" => "newaction"

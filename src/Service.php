@@ -2,154 +2,137 @@
 
 namespace Server;
 
-use Cologger\Logger;
+use \Server\Controllers\Node;
+use \Server\Routing\Router;
 
 class Service {
 
+	// TODO: introduce polymorphism to enhance possible
+	// capabilities while maintaining readability
+	const NORMAL   = 0;
+	const DEBUG    = 1;
+	const INACTIVE = 2;
+
+	public $SERVICE_MODE = self::NORMAL;
+
 	private $router;
-	private $request;
+	private $env;
 
-	/* controllers for errors 404 and 500 */
-	private $e_404;
-	private $e_500;
-       
-	public $log = "";
-	public $base_url = "";
-	public static $template_path = "";
-
-	public function __construct(array $routes = [], ?Request $debug = null) {
-		$this->error404($routes);
-		$this->error500($routes);
-
-		$this->router = new Router($routes);
-		$this->request = $debug ? $debug : new Request;
+	public function __construct(?Router $router = null, ?Environment $env = null) {
+		$this->router = $router ?? new Router;
+		$this->env = $env ?? new Environment;
 	}
 
-	/* Sets up special 404 handler, if present. Otherwise use default */
-	private function error404(array $routes) : void {
-		if (isset($routes["<404>"]))
-			$this->e_404 = $routes["<404>"];
-		else
-			$this->e_404 = self::SimpleController(
-				function($r) { return Response::notFound(); }
-			);
-	}
-	
-	/* Sets up special 500 handler, if present. Otherwise use default */
-	private function error500(array $routes) : void {
-		if (isset($routes["<500>"]))
-			$this->e_500 = $routes["<500>"];
-		else
-			$this->e_500 = self::SimpleController(
-				function($r) { return Response::serverError(); }
-			);
-	}
+	// ======================================================================= //
+	// NOTE: the way we work with a State and the directives that access it is //
+	//                                                                         //
+	// 1. Something happens                                                    //
+	// 2. Service executes default behaviour                                   //
+	// 3. Let directives do whatever                                           //
+	//                                                                         //
+	// The only exception is in report where we just fallback to               //
+	// panic response, because directive calling has failed.                   //
+	// After a directive fails, another report might happen where errors       //
+	// may be read.                                                            //
+	// ======================================================================= //
 
-	/* returns true if the base_url matches the prexix of the request and removes it, else false */
-	private function strip_route_prefix() {
-		$base = route_trim($this->base_url);
-		$req = route_trim($this->request->action);
+	private function debug(string $output, State $s) {
+		if ($this->SERVICE_MODE == self::DEBUG) {
+			$debug = $output ? "DEBUG:\n $output" : "";
+			foreach ($s->error_list as $e)
+				$debug .= "\n$e";
 
-		$correct_prefix = $base == substr($req, 0, strlen($base));
-		
-		// strip base from request
-		if ($correct_prefix)
-			$this->request->action = substr($req, strlen($base));
-		
-		return $correct_prefix;
-	}
-
-	/* attempt to resolve and execute that resolution */
-	public function respond() : Response {
-		if ($this->strip_route_prefix()) {
-			$resolution = $this->router->resolve($this->request->action);
-			if (!$resolution->failed)
-				return $this->execute(
-					$resolution->value->name,
-					$resolution->value->args,
-					$resolution->route_args
-				);
+			$s->response = $s->response ?? new Response;
+			$s->response->payload($debug . $s->response->get_payload());
 		}
-
-		return $this->execute(
-			$this->e_404->name,
-			$this->e_404->args
-		);
 	}
 
-	/* attempt to call controller */
-	private function execute(string $name, array $args = [], array $route_args = []) : Response {
+	private function report(string $event_name, State $s) : State {
 		ob_start();
 		try {
-			$resolved=[];
-			foreach($args as $a)
-				$resolved[] = (is_object($a) and get_class($a) == Constructable::class) ?
-					$a->construct() : $a;
-
-			$response = (new $name(...$resolved))->process($this->request, ...$route_args);
-			$this->checkResponse($response);
+			$s = $this->env->report($event_name, $s);
 		}
-		catch (\Exception $e) {
-			$this->logError($e);
-			$response = $this->respondError();
-		}
-		catch (\Error $e) {
-			$this->logError($e);
-			$response = $this->respondError();
-		}
-		echo ob_get_clean();
-		return $response;
-	}
-
-	private function logError($e) {
-		if ($this->log)
-			(new Logger($this->log))->error((string)$e);
-	}
-
-	/* attempt to use error 500 controller */
-	private function respondError() : Response {
-		$controller = $this->e_500->name;
-		$args = $this->e_500->args;
-		
-		try {
-			$response = (new $controller(...$args))->process($this->request);
-			$this->checkResponse($response);
-		}
+		// TODO: better error reporting
+		// add a special exception type
+		// to tell that this is a directive error
 		catch(\Exception $e) {
-			$this->logError($e);
-			$response = $this->panic();
+			$s->error_list[] = $e;
+			$s->response = $this->panic();
 		}
 		catch(\Error $e) {
-			$this->logError($e);
-			$response = $this->panic();
+			$s->error_list[] = $e;
+			$s->response = $this->panic();
 		}
-		return $response;
+		$output = ob_get_clean();
+		$this->debug($output, $s);
+
+		return $s;
 	}
 
-	private function checkResponse($value) : void {
-		assert(
-			__NAMESPACE__ . "\\Response" ===  get_class($value),
-			"Controller responded with a non Response type value"
-		);
+	public function respond(?Request $r = null) : Response { 
+		if ($this->SERVICE_MODE == self::INACTIVE)
+			return Response::withStatus(503);
+
+		$s = new State($r ?? new Request);
+		$s = $this->report("request", $s);
+
+		// NOTE: null action is considered error 404
+		if ($s->request->action === null) {
+			$s->response = Response::notFound();
+			$s = $this->report("response", $s);
+			return $s->response;
+		}
+
+		$s->resolution = $this->router->resolve($s->request->action);
+		$s = $this->report("resolution", $s);
+
+		if (!$s->resolution) {
+			$s->response = Response::notFound();
+			$s = $this->report("response", $s);
+			return $s->response;
+		}
+
+		// set request route arguments
+		$s->request->args = $s->resolution->args;
+		$s = $this->execute($s);
+		$s = $this->report("response", $s);
+
+		return $s->response;
 	}
 
-	/* default "everything failed" response */
+	private function execute(State $s) : State {
+		$node = $s->resolution->value;
+		$node->env = $this->env->extend($node->env);
+
+		ob_start();
+		try {
+			$s->response = (new $node->cons($node->env))->__service_init($s->request);
+		} catch (\Exception $e) {
+			$s->error_list[] = $e;
+			$s->response = $this->panic();
+
+			$s = $this->report("exception", $s);
+		} catch (\Error $e) {
+			$s->error_list[] = $e;
+			$s->response = $this->panic();
+
+			$s = $this->report("error", $s);
+		}
+		$output = ob_get_clean();
+
+		$this->debug($output, $s);
+		
+		// NOTE: you are not supposed to output to stdout in normal mode
+		if(!empty($output) and $this->SERVICE_MODE == Service::NORMAL) {
+			$s->error_list[] = new \Exception("Controller produced output: $output");
+			$s = $this->report("exception", $s);
+		}
+
+		return $s;
+	}
+
 	private function panic() : Response {
 		return Response::serverError();
-	}
-
-	public static function Controller(string $class, array $params = []){
-		return (object)[
-			"name" => $class,
-			"args" => $params
-		];
-	}
-
-	public static function SimpleController(callable $processor) {
-		return (object)[
-			"name" => SimpleController::class,
-			"args" => [$processor]
-		];
 	}
 }
 

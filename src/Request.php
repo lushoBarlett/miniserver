@@ -2,9 +2,17 @@
 
 namespace Server;
 
-use Server\File;
-
 class Request {
+
+	const GET = "GET";
+	const POST = "POST";
+	const PUT = "PUT";
+	const PATCH = "PATCH";
+	const DELETE = "DELETE";
+	const HEAD = "HEAD";
+	const OPTIONS = "OPTIONS";
+	const TRACE = "TRACE";
+	const CONNECT = "CONNECT";
 
 	public $action;
 	public $secure;
@@ -16,53 +24,51 @@ class Request {
 	public $json;
 	public $cookies;
 	public $files;
+	// filled by Resolution arguments
+	public $args = [];
 
 	public function __construct(?array $debug = null) {
-		$this->get();
-
-		if ($debug)
+		if ($debug !== null) {
 			foreach ($debug as $k => $v)
 				$this->{$k} = $v;
+		} else {
+			$this->get();
+		}
 	}
 
 	private function get() {
-		$this->action = isset($_SERVER["REQUEST_URI"]) ? $this->splitURI($_SERVER["REQUEST_URI"]) : null;
+		$this->action = $this->splitURI($_SERVER["REQUEST_URI"] ?? null);
+		$this->secure = isset($_SERVER["HTTPS"]);
+		$this->method = $_SERVER["REQUEST_METHOD"] ?? null;
+		$this->contentType = $_SERVER["CONTENT_TYPE"] ?? null;
 
-		$this->secure = isset($_SERVER["HTTPS"]) ? true : false;
-	
-		$this->method = isset($_SERVER["REQUEST_METHOD"]) ? $_SERVER["REQUEST_METHOD"] : null;
-
-		$this->cookies = $_COOKIE;
-	
-		$this->contentType = isset($_SERVER["CONTENT_TYPE"]) ? $_SERVER["CONTENT_TYPE"] : null;
-	
 		$this->raw = $this->getraw();
-
 		$this->post = $_POST;
-	
 		$this->get = $_GET;
+		$this->cookies = $_COOKIE;
 
 		$this->json = $this->getjson();
-
 		$this->files = $this->getfiles();
 	}
 
-	private function splitURI(string $uri) {
-		return explode("?", $uri)[0];
+	private function splitURI(?string $uri) : ?string {
+		return $uri ? explode("?", $uri)[0] : null;
 	}
 
 	private function getraw() {
-		if ($this->method === "GET") {
+		if ($this->method == self::GET) {
 			try {
 				return urldecode($_SERVER["QUERY_STRING"]);
-			} catch (\Exception $e) {}
+			} catch (\Exception $e) {
+				return (string)$e;
+			}
 		}
 	
 		return file_get_contents("php://input");
 	}
 
 	private function getjson() {
-		if ($this->contentType === "application/json") {
+		if ($this->contentType == "application/json") {
 			try {
 				return json_decode($this->raw);
 			} catch (\Exception $e) {
