@@ -41,7 +41,7 @@ class ServiceTest extends TestCase {
 	}
 
 	public function testControllerFactory() {
-		$c = Controller::Node(TestController::class, ["/argument"]);
+		$c = Controller::Node(TestController::class, ["route" => "/argument"]);
 
 		$this->assertEquals(TestController::class, $c->cons);
 		$this->assertEquals(new Environment(["route" => "/argument"]), $c->env);
@@ -70,108 +70,16 @@ class ServiceTest extends TestCase {
 	public function testControllerExtraArguments() {
 		$response = $this->gen_response(
 			[
-				"/path/<argument>/<argument>/<argument>/" =>
+				"/path/@a/@b/@c/" =>
 				SimpleController::Node(
-					function($r, $a, $b, $c) {
-						return Response::withText($a . $b . $c);
+					function($r) {
+						return Response::withText($r->args["a"] . $r->args["b"] . $r->args["c"]);
 					}
 				)
 			],
 			$this->ping("/path/a/b/c")
 		);
 		$this->assertEquals("abc", $response->get_payload());
-	}
-
-	public function testControllerError() {
-		$routes = new Router([
-			"/nores" => SimpleController::Node(
-				function($r) { return "not response"; }
-			),
-			"/excep" => SimpleController::Node(
-				function($r) { throw new \Exception; }
-			)
-		]);
-
-		$service = new Service($routes);
-		$service->log = __DIR__ . "/__test.log";
-		$response = $service->respond($this->ping("/nores"));
-		
-		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
-		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
-		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
-
-		$service = new Service($routes);
-		$service->log = __DIR__ . DIRECTORY_SEPARATOR . "__test.log";
-		$response = $service->respond($this->ping("/excep"));
-		
-		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
-		$this->assertTrue(file_exists(__DIR__ . "/__test.log"));
-		$this->assertTrue(unlink(__DIR__ . "/__test.log"));
-	}
-
-	public function testError404Handler() {
-		$response = $this->gen_response(
-			[
-				"/path" => SimpleController::Node(
-					function($r) { return Response::withText(""); }
-				),
-				"<404>" => SimpleController::Node(
-					function($r) { return Response::withText("handled gracefully"); }
-				)
-			],
-			$this->ping("/non/existent")
-		);
-		$this->assertEquals("handled gracefully", $response->get_payload());
-	}
-	
-	public function testError500Handler() {
-		$response = $this->gen_response(
-			[
-				"/excep" => SimpleController::Node(
-					function($r) { throw \Exception; }
-				),
-				"<500>" => SimpleController::Node(
-					function($r) { return Response::withText("handled gracefully"); }
-				)
-			],
-			$this->ping("/excep")
-		);
-		$this->assertEquals("handled gracefully", $response->get_payload());
-	}
-	
-	public function testPanic() {
-		$response = $this->gen_response(
-			[
-				"/excep" => SimpleController::Node(
-					function($r) { throw \Exception; }
-				),
-				"<500>" => SimpleController::Node(
-					function($r) { return "non response"; }
-				)
-			],
-			$this->ping("/excep")
-		);
-		$this->assertEquals(Response::serverError()->get_status(), $response->get_status());
-	}
-
-	public function testBaseUrl() {
-		$routes = new Router([
-			"/route" => SimpleController::Node(
-				function($r) { return Response::withText("test"); }
-			)
-		]);
-
-		$service = new Service($routes);
-		$service->base_url = "/my/";
-
-		$response = $service->respond($this->ping("/route"));
-		$this->assertEquals(Response::notFound()->get_status(), $response->get_status());
-
-		$service = new Service($routes);
-		$service->base_url = "/my/";
-
-		$response = $service->respond($this->ping("/my/route"));
-		$this->assertEquals("test", $response->get_payload());
 	}
 }
 
