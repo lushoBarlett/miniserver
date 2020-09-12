@@ -13,12 +13,12 @@ use Server\Routing\Resolution;
 
 class ADirective extends Directive {
 
-	public function request_event(State $s) : State {
+	public function request(State $s) : State {
 		$s->request->action = "/other/path";
 		return $s;
 	}
 
-	public function response_event(State $s) : State {
+	public function response(State $s) : State {
 		$s->response = Response::withText("some content")->status(200);
 		return $s;
 	}
@@ -26,17 +26,17 @@ class ADirective extends Directive {
 
 class BDirective extends Directive {
 
-	public function exception_event(State $s) : State {
+	public function exception(State $s) : State {
 		$s->response = Response::withText("EXCEPTION")->status(500);
 		return $s;
 	}
 
-	public function error_event(State $s) : State {
+	public function error(State $s) : State {
 		$s->response = Response::withText("ERROR")->status(500);
 		return $s;
 	}
 
-	public function resolution_event(State $s) : State {
+	public function resolution(State $s) : State {
 		// NOTE: no matter the route, a FailController will get instantiated 
 		$s->resolution = new Resolution(FailController::Node(), $s->request->action);
 		return $s;

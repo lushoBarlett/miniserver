@@ -70,7 +70,7 @@ class Environment {
 
 	public function report(string $e_name, State $s) : State {
 		foreach($this->directives as $d)
-			$s = $d->{"{$e_name}_event"}($s);
+			$s = $d->{$e_name}($s);
 
 		return $s;
 	}
