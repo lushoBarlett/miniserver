@@ -21,7 +21,7 @@ class Router {
 	private $tree;
 
 	public function __construct(array $routes = []) {
-		$this->tree = self::Node();
+		$this->tree = new Node;
 		foreach($routes as $r => $cons)
 			$this->tree = $this->_add($this->tree, Route::split($r), $cons, $r);
 	}
@@ -72,17 +72,9 @@ class Router {
 		$p = !Route::is_argument($p) ? $p : Route::ARGUMENT;
 
 		$tree->children[$p] = $this->_add(
-			$tree->children[$p] ?? self::Node(), $ps, $cons, $route
+			$tree->children[$p] ?? new Node, $ps, $cons, $route
 		);
         	return $tree;
-	}
-
-	private static function Node($cons = null, array $children = [], ?string $route = null) {
-		return (object)[
-			"cons" => $cons,
-			"children" => $children,
-			"route" => null
-		];
 	}
 }
 
