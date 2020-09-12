@@ -7,15 +7,19 @@ use Server\State;
 class LogDirective extends Directive {
 
 	public $file;
+	public $timezone;
 
+	// TODO: timezone
 	public function __construct(string $file) {
 		$this->file = $file;
+		$this->timezone = $timezone;
 	}
 
 	private function new_entry($text) {
+		$date = date("Y-m-d [D] H:i:s [T O]");
 		$content = file_get_contents($file);
 		if ($content !== false)
-			file_put_contents($file, "$content\n$text");
+			file_put_contents($file, "$content\n$date: $text");
 	}
 
 	public function error(State $s) : State {
