@@ -15,10 +15,7 @@ class SimpleController implements IController {
 	}
 
 	public static function Node(callable $proc) {
-		return (object)[
-			"cons" => self::class,
-			"env" => ["#proc" => $proc]
-		];
+		return new Node(self::class, ["#proc" => $proc]);
 	}
 }
 

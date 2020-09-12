@@ -67,7 +67,6 @@ class Environment {
 			if($result)
 				$args[0] = $result;
 		}
-
 	}
 }
 

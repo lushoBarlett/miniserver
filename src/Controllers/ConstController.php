@@ -14,11 +14,8 @@ class ConstController implements IController {
 		return $this->env->constant("resp");
 	}
 
-	public static function Node(Response $r) : object {
-		return (object)[
-			"cons" => self::class,
-			"meta" => ["resp" => $r]
-		];
+	public static function Node(Response $r) : Node {
+		return new Node(self::class, ["resp" => $r]);
 	}
 }
 

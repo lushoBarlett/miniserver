@@ -36,11 +36,8 @@ class Controller implements IController {
 	public function trace(Request $r)   : Response { return Response::notFound(); }
 	public function connect(Request $r) : Response { return Response::notFound(); }
 
-	public static function Node(string $cons, ?Environment $env) : object {
-		return (object)[
-			"cons" => $cons,
-			"env" => $env
-		];
+	public static function Node(string $cons, ?Environment $env = null) : Node {
+		return new Node($cons, $env);
 	}
 }
 

@@ -2,19 +2,19 @@
 
 namespace Server;
 
-use Cologger\Logger;
+use \Server\Controllers\Node;
 
 class Service {
 
 	private $router;
 	private $env;
 
-	public function __construct(?Router $router, ?Environment $env) {
+	public function __construct(?Router $router = null, ?Environment $env = null) {
 		$this->router = $router ?? new Router;
 		$this->env = $env ?? new Environment;
 	}
 
-	private function report_event(string $event_name) {
+	private function report(string $event_name) {
 		try {
 			return $this->env->report(...func_get_args());
 		}
@@ -29,35 +29,30 @@ class Service {
 	}
 
 	public function respond(?Request $r) : Response {
-		$r = $this->report_event("request", $r ?? new Request);
+		$r = $this->report("request", $r ?? new Request);
 
 		if ($r->action) {
-			$rsl = $this->report_event("resolution", $this->router->resolve($r->action));
+			$rsl = $this->report("resolution", $this->router->resolve($r->action));
 			if ($rsl->failed)
 				$resp = Response::notFound();
 			else
-				$resp = $this->execute(
-					$r,
-					$rsl->value->cons,
-					$this->env->extend($rsl->value->env),
-					$rsl->route_args
-				);
+				$resp = $this->execute($r, $rsl->value, $rsl->route_args);
 		}
 
-		return $this->report_event("response", $resp);
+		return $this->report("response", $resp);
 	}
 
-	private function execute(Request $r, string $cons, Environment $env, array $route_args = []) : Response {
+	private function execute(Request $r, Node $node, array $route_args = []) : Response {
+		$node->env = $this->env->extend($node->env);
+
 		ob_start();
 		try {
-			$response = (new $cons($env))->__service_init($r, ...$route_args);
+			$response = (new $node->cons($node->env))->__service_init($r, ...$route_args);
 			$this->check_response($response);
-		}
-		catch (\Exception $e) {
+		} catch (\Exception $e) {
 			$this->report("exception", $e);
 			$response = $this->panic();
-		}
-		catch (\Error $e) {
+		} catch (\Error $e) {
 			$this->report("error", $e);
 			$response = $this->panic();
 		}
@@ -65,10 +60,7 @@ class Service {
 		// NOTE: you are not supposed to output anything directly
 		$output = ob_get_clean();
 		if(!empty($output))
-			$this->report(
-				"exception",
-				new \Exception("Controller produced output: $output")
-			);
+			$this->report("exception", new \Exception("Controller produced output: $output"));
 
 		return $response;
 	}
