@@ -1,10 +1,10 @@
 <?php
 
-namespace Server\Directives;
+namespace Server\Modules;
 
 use Server\State;
 
-class LogDirective extends Directive {
+class LogModule extends Module {
 
 	public $file;
 	public $timezone;

@@ -1,10 +1,10 @@
 <?php
 
-namespace Server\Directives;
+namespace Server\Modules;
 
 use Server\State;
 
-class Directive {
+class Module {
 
 	public function request(State $s)    : State { return $s; }
 	public function response(State $s)   : State { return $s; }

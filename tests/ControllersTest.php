@@ -7,8 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Server\Request;
 use Server\Response;
 
-use Server\Directives\Directive;
-
 use Server\Controllers\ConstController;
 use Server\Controllers\SimpleController;
 use Server\Controllers\Controller;
@@ -42,7 +40,6 @@ class ControllersTest extends TestCase {
 
 	private function gen_response(array $routes, Request $request) {
 		$s = new Service(new Router($routes));
-		$s->SERVICE_MODE = Service::DEBUG;
 		return $s->respond($request);
 	}
 

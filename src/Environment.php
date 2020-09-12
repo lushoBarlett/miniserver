@@ -2,9 +2,11 @@
 
 namespace Server;
 
+use Server\Modules\Module;
+
 class Environment {
 
-	private $directives = [];
+	private $modules = [];
 	private $providers = [];
 	private $constants = [];
 
@@ -17,8 +19,8 @@ class Environment {
 
 			switch($code[0]) {
 			case '@':
-				assert($value instanceof Directive);
-				$this->directives[substr($code, 1)] = $value;
+				assert($value instanceof Module);
+				$this->modules[substr($code, 1)] = $value;
 				break;
 			case '#':
 				// TODO: allow classes?
@@ -31,8 +33,8 @@ class Environment {
 		}
 	}
 
-	public function directive(string $d) : ?Directive {
-		return $this->directives[$d] ?? null;
+	public function module(string $d) : ?Module {
+		return $this->modules[$d] ?? null;
 	}
 
 	public function provider(string $p) : ?callable {
@@ -52,9 +54,9 @@ class Environment {
 
 		$e = new self;
 
-		$e->directives = array_merge($this->directives, $env->directives);
-		$e->providers  = array_merge($this->providers,  $env->providers);
-		$e->constants  = array_merge($this->constants,  $env->constants);
+		$e->modules   = array_merge($this->modules,   $env->modules  );
+		$e->providers = array_merge($this->providers, $env->providers);
+		$e->constants = array_merge($this->constants, $env->constants);
 		return $e;
 	}
 
@@ -69,7 +71,7 @@ class Environment {
 	}
 
 	public function report(string $e_name, State $s) : State {
-		foreach($this->directives as $d)
+		foreach($this->modules as $d)
 			$s = $d->{$e_name}($s);
 
 		return $s;

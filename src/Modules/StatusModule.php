@@ -1,10 +1,10 @@
 <?php
 
-namespace Server\Directives;
+namespace Server\Modules;
 
 use Server\State;
 
-class StatusDirective extends Directive {
+class StatusModule extends Module {
 
 	private $status;
 	private $proc;

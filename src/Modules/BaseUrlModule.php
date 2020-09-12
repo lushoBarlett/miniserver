@@ -1,11 +1,11 @@
 <?php
 
-namespace Server\Directives;
+namespace Server\Modules;
 
 use Server\Routing\Route;
 use Server\State;
 
-class BaseUrlDirective extends Directive {
+class BaseUrlModule extends Module {
 
 	private $base;
 
