@@ -42,6 +42,7 @@ class Service {
 			foreach ($s->error_list as $e)
 				$debug .= "\n$e";
 
+			$s->response = $s->response ?? new Response;
 			$s->response->payload($debug . $s->response->get_payload());
 		}
 	}
@@ -49,7 +50,7 @@ class Service {
 	private function report(string $event_name, State $s) : State {
 		ob_start();
 		try {
-			return $this->env->report($event_name, $s);
+			$s = $this->env->report($event_name, $s);
 		}
 		// TODO: better error reporting
 		// add a special exception type
@@ -63,7 +64,7 @@ class Service {
 			$s->response = $this->panic();
 		}
 		$output = ob_get_clean();
-		debug($output, $s);
+		$this->debug($output, $s);
 
 		return $s;
 	}
@@ -119,7 +120,7 @@ class Service {
 		}
 		$output = ob_get_clean();
 
-		debug($output, $s);
+		$this->debug($output, $s);
 		
 		// NOTE: you are not supposed to output to stdout in normal mode
 		if(!empty($output) and $this->SERVICE_MODE == Service::NORMAL) {

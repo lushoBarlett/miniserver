@@ -4,7 +4,7 @@ namespace Server;
 
 class Response {
 
-	private $status;
+	private $status = 200;
 	private $redirect;
 	private $payload = "";
 	private $cookies = [];
@@ -16,17 +16,13 @@ class Response {
 		http_response_code($this->status);
 
 		if ($this->redirect)
-			header("Location: $this->redirect");
+			$this->headers[] = new Header("Location", $this->redirect);
 
-		foreach ($this->headers as $k => $v)
-			header("$k: $v");
+		foreach ($this->headers as $header)
+			$header->set_header();
 
-		foreach ($this->cookies as $k => $j)
-			setcookie(
-				$k, $j['value'],
-				($j['expire'] !== 0 ? time() + $j['expire'] : 0),
-				"/", "", $j['secure'], $j['httponly']
-			);
+		foreach ($this->cookies as $cookie)
+			$cookie->set_cookie();
 
 		return $this->payload;
 	}
@@ -37,86 +33,89 @@ class Response {
 	public function get_cookies()  { return $this->cookies;  }
 	public function get_headers()  { return $this->headers;  }
 
-	public function status(int $status) : Response {
+	public function status(int $status) : self {
 		$this->status = $status;
 		return $this;
 	}
 
-	public function payload(string $content) : Response {
+	public function payload(string $content) : self {
 		$this->payload = $content;
 		return $this;
 	}
 
-	public function redirect(string $url) : Response {
+	public function redirect(string $url) : self {
 		$this->status(302);
 		$this->redirect = $url;
 		return $this;
 	}
 
-	// TODO: improve
-	public function cookie(
-		string $name, string $value, int $expireIn = 0,
-		bool $secure = false, bool $httpOnly = false
-	) : Response {
-		$this->cookies[$name] = [
-			"value" => $value,
-			"expire" => $expireIn,
-			"secure" => $secure,
-			"httponly" => $httpOnly
-		];
+	public function cookie(Cookie $cookie) : self {
+		$this->cookies[] = $cookie;
 		return $this;
 	}
 
-	public function header(string $header, string $value) : Response {
-		$this->headers[$header] = $value;
+	public function header(Header $header) : self {
+		$this->headers[] = $header;
 		return $this;
 	}
 
 	// STATIC CONSTRUCTORS //
 
-	public static function redirectTo(string $url, bool $temporary = true) : Response {
-		return (new Response)
+	public static function redirectTo(string $url, bool $temporary = true) : self {
+		return (new self)
 			->redirect($url)
 			->status($temporary ? 302 : 301);
 	}
 	
-	public static function withView(string $view) : Response {
+	public static function withView(string $view) : self {
 		$view = file_get_contents($view);
 		
-		return (new Response)->payload($view);
+		return (new self)->payload($view);
 	}
 	
-	public static function withTemplate($template, ?array $vars) : Response {
+	public static function withTemplate($template, ?array $vars) : self {
 		if (is_string($template)) {
 			$template = new Template($template);
 			$template->add_vars($vars ?? []);
 		}
 		// TODO: error handling
 
-		return (new Response)->payload($template->render());
+		return (new self)->payload($template->render());
 	}
 	
-	public static function withText(string $text) : Response {
-		return (new Response)->payload($text);
+	public static function withText(string $text) : self {
+		return (new self)->payload($text);
 	}
 
-	public static function withStatus(int $status) : Response {
-		return (new Response)->status($status);
+	public static function withStatus(int $status) : self {
+		return (new self)->status($status);
 	}
 
-	public static function notFound() {
+	public static function withCookies(...$args) : self {
+		$r = new self;
+		foreach ($args as $cookie)
+			$r->cookie($cookie);
+		return $r;
+	}
+
+	public static function withHeaders(...$args) : self {
+		$r = new self;
+		foreach ($args as $header)
+			$r->header($header);
+		return $r;
+	}
+
+	public static function notFound() : self {
 		return self::withStatus(404);
 	}
 
-	public static function serverError() {
+	public static function serverError() : self {
 		return self::withStatus(500);
 	}
 
-	public static function withJSON($value) {
+	public static function withJSON($value) : self {
 		return self::withText(json_encode($value));
 	}
-
-	// TODO: withCookie
 }
 
 ?>
