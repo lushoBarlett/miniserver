@@ -7,6 +7,14 @@ use \Server\Routing\Router;
 
 class Service {
 
+	// TODO: introduce polymorphism to enhance possible
+	// capabilities while maintaining readability
+	const NORMAL   = 0;
+	const DEBUG    = 1;
+	const INACTIVE = 2;
+
+	public $SERVICE_MODE = self::NORMAL;
+
 	private $router;
 	private $env;
 
@@ -48,6 +56,9 @@ class Service {
 	}
 
 	public function respond(?Request $r = null) : Response { 
+		if ($this->SERVICE_MODE == self::INACTIVE)
+			return Response::withStatus(503);
+
 		$s = new State($r ?? new Request);
 		$s = $this->report("request", $s);
 
@@ -94,8 +105,15 @@ class Service {
 		}
 		$output = ob_get_clean();
 
-		// NOTE: you are not supposed to output to stdout
-		if(!empty($output)) {
+		if ($this->SERVICE_MODE == self::DEBUG) {
+			$debug = $output ? "DEBUG:\n $output" : "";
+			foreach ($s->error_list as $e)
+				$debug .= "\n$e";
+
+			$s->response->payload($debug . $s->response->get_payload());
+		}
+		// NOTE: you are not supposed to output to stdout in normal mode
+		else if(!empty($output)) {
 			$s->error_list[] = new \Exception("Controller produced output: $output");
 			$s = $this->report("exception", $s);
 		}

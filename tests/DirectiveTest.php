@@ -8,6 +8,7 @@ use Server\Directives\Directive;
 use Server\Controllers\IController;
 use Server\Controllers\Node;
 
+use Server\Routing\Route;
 use Server\Routing\Router;
 use Server\Routing\Resolution;
 
@@ -19,7 +20,7 @@ class ADirective extends Directive {
 	}
 
 	public function response(State $s) : State {
-		$s->response = Response::withText("some content")->status(200);
+		$s->response = Response::withText("some content");
 		return $s;
 	}
 }
@@ -27,12 +28,12 @@ class ADirective extends Directive {
 class BDirective extends Directive {
 
 	public function exception(State $s) : State {
-		$s->response = Response::withText("EXCEPTION")->status(500);
+		$s->response = Response::withText("EXCEPTION");
 		return $s;
 	}
 
 	public function error(State $s) : State {
-		$s->response = Response::withText("ERROR")->status(500);
+		$s->response = Response::withText("ERROR");
 		return $s;
 	}
 
@@ -51,7 +52,7 @@ class FailController implements IController {
 			throw new \Exception;
 		else if (Route::trim($r->action) == "error")
 			throw new \Error;
-		return Response::withText("FAILED TO FAIL")->status(200);
+		return Response::withText("FAILED TO FAIL");
 	}
 
 	public static function Node(...$args) : Node {
@@ -62,9 +63,8 @@ class FailController implements IController {
 class DirectiveTest extends TestCase {
 
 	private function gen_response(array $routes, Directive $d, Request $request) {
-		return (new Service(
-			new Router($routes), new Environment(["@test" => $d]))
-		)->respond($request);
+		$s = new Service(new Router($routes), new Environment(["@test" => $d]));
+		return $s->respond($request);
 	}
 
 	private function ping(string $route) {
@@ -81,7 +81,6 @@ class DirectiveTest extends TestCase {
 	public function testResponseEvent() {
 		$response = $this->gen_response([], new ADirective, $this->ping("/some/path"));
 		$this->assertEquals("some content", $response->get_payload());
-		$this->assertEquals(200, $response->get_status());
 	}
 
 	public function testExceptionErrorEvent() {
@@ -91,16 +90,13 @@ class DirectiveTest extends TestCase {
 		];
 		$response = $this->gen_response($routes, new BDirective, $this->ping("except"));
 		$this->assertEquals("EXCEPTION", $response->get_payload());
-		$this->assertEquals(500, $response->get_status());
 
 		$response = $this->gen_response($routes, new BDirective, $this->ping("error"));
 		$this->assertEquals("ERROR", $response->get_payload());
-		$this->assertEquals(500, $response->get_status());
 	}
 
 	public function testResolutionEvent() {
 		$response = $this->gen_response([], new BDirective, $this->ping("/some/path"));
 		$this->assertEquals("FAILED TO FAIL", $response->get_payload());
-		$this->assertEquals(200, $response->get_status());
 	}
 }
