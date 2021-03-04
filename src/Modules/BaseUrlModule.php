@@ -26,7 +26,7 @@ class BaseUrlModule extends Module {
 	public function response(State $s) : State {
 		$redirection = $s->response->get_redirect();
 
-		if ($redirection !== null) {
+		if ($redirection !== null and $this->base != "") {
 			$redirection = "/{$this->base}/" . Route::trim($redirection);
 			$s->response->redirect($redirection);
 		}
