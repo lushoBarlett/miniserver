@@ -24,6 +24,7 @@ class Request {
 	public $json;
 	public $cookies;
 	public $files;
+	public $IP;
 	// filled by Resolution arguments
 	public $args = [];
 
@@ -49,6 +50,7 @@ class Request {
 
 		$this->json = $this->getjson();
 		$this->files = $this->getfiles();
+		$this->IP = $this->getIP();
 	}
 
 	private function splitURI(?string $uri) : ?string {
@@ -58,7 +60,7 @@ class Request {
 	private function getraw() {
 		if ($this->method == self::GET) {
 			try {
-				return urldecode($_SERVER["QUERY_STRING"]);
+				return urldecode($_SERVER["QUERY_STRING"] ?? "");
 			} catch (\Exception $e) {
 				return (string)$e;
 			}
@@ -113,6 +115,13 @@ class Request {
 		}
 
 		return $formatted;
+	}
+
+	private function getIP() {
+		return $_SERVER['HTTP_X_FORWARDED_FOR']
+		    ?? $_SERVER["REMOTE_ADDR"]
+		    ?? $_SERVER["HTTP_CLIENT_IP"]
+		    ?? '';
 	}
 }
 

@@ -61,6 +61,10 @@ class Response {
 
 	// STATIC CONSTRUCTORS //
 
+	public static function OK() : self {
+		return (new self)->status(200);
+	}
+
 	public static function redirectTo(string $url, bool $temporary = true) : self {
 		return (new self)
 			->redirect($url)
