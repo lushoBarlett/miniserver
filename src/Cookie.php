@@ -10,7 +10,7 @@ class Cookie {
 
 	public $name;
 	public $value;
-	public $expires = 0;
+	public $expires;
 	public $path = "";
 	public $domain = "";
 	public $secure = false;
@@ -54,7 +54,7 @@ class Cookie {
 
 	public function set_cookie() {
 		setcookie($this->name, $this->value, [
-			"expires" => $this->expires,
+			"expires" => $this->expires === null ? 0 : time() + $this->expires,
 			"path" => $this->path,
 			"domain" => $this->domain,
 			"secure" => $this->secure,
