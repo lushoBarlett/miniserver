@@ -22,6 +22,17 @@ class BaseUrlModule extends Module {
 
 		return $s;
 	}
+
+	public function response(State $s) : State {
+		$redirection = $s->response->get_redirect();
+
+		if ($redirection !== null) {
+			$redirection = "/{$this->base}/" . Route::trim($redirection);
+			$s->response->redirect($redirection);
+		}
+
+		return $s;
+	}
 }
 
 ?>
