@@ -24,11 +24,20 @@ class BaseUrlModule extends Module {
 	}
 
 	public function response(State $s) : State {
-		$redirection = $s->response->get_redirect();
+		if ($this->base != "") {
+			$redirection = $s->response->get_redirect();
+			$cookies = $s->response->get_cookies();
 
-		if ($redirection !== null and $this->base != "") {
-			$redirection = "/{$this->base}/" . Route::trim($redirection);
-			$s->response->redirect($redirection);
+			// NOTE: works because we are changing objects,
+			// which are references
+			foreach ($cookies as $cookie)
+				if ($cookie->path != '')
+					$cookie->path = "/{$this->base}/" . Route::trim($cookie->path);
+
+			if ($redirection !== null) {
+				$redirection = "/{$this->base}/" . Route::trim($redirection);
+				$s->response->redirect($redirection);
+			}
 		}
 
 		return $s;
