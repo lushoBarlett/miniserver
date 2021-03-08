@@ -77,7 +77,7 @@ class Response {
 		return (new self)->payload($view);
 	}
 	
-	public static function withTemplate($template, ?array $vars) : self {
+	public static function withTemplate($template, ?array $vars = null) : self {
 		if (is_string($template)) {
 			$template = new Template($template);
 			$template->add_vars($vars ?? []);
