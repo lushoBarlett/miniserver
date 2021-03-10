@@ -59,7 +59,7 @@ class Cookie {
 			"domain" => $this->domain,
 			"secure" => $this->secure,
 			"httponly" => $this->http_only,
-			"samesite" => $this->samesite
+			"samesite" => $this->same_site
 		]);
 	}
 }
