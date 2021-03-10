@@ -58,7 +58,7 @@ class Cookie {
 			"path" => $this->path,
 			"domain" => $this->domain,
 			"secure" => $this->secure,
-			"httponly" => $this->httponly,
+			"httponly" => $this->http_only,
 			"samesite" => $this->samesite
 		]);
 	}
