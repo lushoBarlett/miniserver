@@ -38,9 +38,9 @@ class Service {
 
 	private function debug(string $output, State $s) {
 		if ($this->SERVICE_MODE == self::DEBUG) {
-			$debug = $output ? "DEBUG:\n $output" : "";
+			$debug = empty($output) ? "" : "DEBUG:\n $output\n";
 			foreach ($s->error_list as $e)
-				$debug .= "\n$e";
+				$debug .= "$e\n";
 
 			$s->response = $s->response ?? new Response;
 			$s->response->payload($debug . $s->response->get_payload());
