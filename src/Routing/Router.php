@@ -1,6 +1,6 @@
 <?php
 
-namespace Server\Routing;
+namespace Mini\Routing;
 
 // TODO: optimize.
 // 1. adapt implementation from functional to imperative
@@ -10,25 +10,38 @@ namespace Server\Routing;
 // Maybe this can be set as an option
 class Router {
 
-	private $tree;
+	private Node $tree;
 
-	public function __construct(array $routes = []) {
+	/**
+	 * @param array<Route> $routes
+	 */
+	public function __construct(...$routes) {
 		$this->tree = new Node;
-		foreach($routes as $r => $cons)
-			$this->tree = $this->_add($this->tree, Route::split($r), $cons, $r);
+		array_walk($routes, function(Route $route) {
+
+			if ($route->name === null)
+				throw new \ValueError("Cannot use route with no name");
+
+			if ($route->controller === null)
+				throw new \ValueError("Cannot use route with no controller");
+
+			$this->tree = $this->_add($this->tree, Route::split($route->name), $route);
+		});
 	}
 
-	private static function partition(array $path) {
+	/**
+	 * @param array<string> $path
+	 */
+	private static function partition(array $path) : array {
 		return [$path[0], array_slice($path, 1)];
 	}
 
-	private function _resolve(Node $tree, array $path) {
-		if (empty($path)) {
-			if ($tree->value !== null)
-				return new Resolution($tree->value, $tree->route);
-
-			return null;
-		}
+	/**
+	 * @param array<string> $path
+	 */
+	private function _resolve(Node $tree, array $path) : ?Route {
+		if (empty($path))
+			return $tree->route;
 
 		list($p, $ps) = self::partition($path);
 
@@ -37,24 +50,21 @@ class Router {
 			return $this->_resolve($tree->children[$p], $ps);
 
 		// argument route defined
-		if (isset($tree->children[Route::ARGUMENT]))
-			return $this->_resolve($tree->children[Route::ARGUMENT], $ps);
+		if (isset($tree->children[Route::Argument]))
+			return $this->_resolve($tree->children[Route::Argument], $ps);
 		
 		return null;
 	}
 
-	public function resolve(string $url) {
-		$res = $this->_resolve($this->tree, Route::split($url));
-
-		if ($res)
-			$res->args = Route::arguments($res->route, $url);
-
-		return $res;
+	public function resolve(string $url) : ?Route {
+		return $this->_resolve($this->tree, Route::split($url));
 	}
     
-	private function _add(Node $tree, array $path, $value, string $route) {
+	/**
+	 * @param array<string> $path
+	 */
+	private function _add(Node $tree, array $path, Route $route) : Node {
 		if (empty($path)) {
-			$tree->value = $value;
 			$tree->route = $route;
 			return $tree;
 		}
@@ -62,10 +72,10 @@ class Router {
 		list($p, $ps) = self::partition($path);
 
 		// strip argument name
-		$p = !Route::is_argument($p) ? $p : Route::ARGUMENT;
+		if (Route::is_argument($p))
+			$p = Route::Argument;
 
-		$tree->children[$p] = $this->_add(
-		    $tree->children[$p] ?? new Node, $ps, $value, $route);
+		$tree->children[$p] = $this->_add($tree->children[$p] ?? new Node, $ps, $route);
 
         	return $tree;
 	}

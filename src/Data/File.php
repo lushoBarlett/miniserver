@@ -1,15 +1,16 @@
 <?php
 
-namespace Server;
+namespace Mini\Data;
 
 class File {
-	public $name;
-	public $type;
-	public $tmp_name;
-	public $error;
-	public $size;
 
-	private $regex = [];
+	public string $name;
+	public string $type;
+	public string $tmp_name;
+	public int $error;
+	public int $size;
+
+	private array $regex = [];
 
 	public function __construct(string $name, string $type, string $tmp, int $err, int $size) {
 		$this->name = $name;
@@ -20,13 +21,8 @@ class File {
 	}
 
 	public function complies() : bool {
-		return array_reduce(
-			$this->regex,
-			function ($last, $curr) {
-				return $last and preg_match($curr, $this->name);
-			},
-			true
-		);
+		return array_reduce($this->regex, fn (bool $last, string $curr) =>
+			$last && preg_match($curr, $this->name), true);
 	}
 
 	public function add_rule(string $regex) : void {

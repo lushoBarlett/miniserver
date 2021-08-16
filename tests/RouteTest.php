@@ -1,12 +1,10 @@
 <?php
 
-namespace Server;
+namespace Mini\Routing;
 
 include "vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
-
-use Server\Routing\Route;
 
 class RouteTest extends TestCase {
 
@@ -45,10 +43,12 @@ class RouteTest extends TestCase {
 	}
 
 	public function testArguments() {
-		$this->assertEquals(
-			["a" => "value", "c" => "other"],
-			Route::arguments("/@a/b/@c/d", "value/b/other/d")
-		);
+		$name = "/@a/b/@c/d";
+		$route = Route::forall($name, fn() => 0)
+			->parameter_type("a", Route::Int)
+			->parameter_type("c", Route::Float);
+
+		$this->assertEquals(["a" => 1, "c" => 1.0], $route->arguments("1/b/1.0/d"));
 	}
 }
 

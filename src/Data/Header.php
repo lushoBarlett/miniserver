@@ -1,18 +1,18 @@
 <?php
 
-namespace Server;
+namespace Mini\Data;
 
 class Header {
 
-	public $name;
-	public $value;
+	public string $name;
+	public string $value;
 
 	public function __construct(string $name, string $value) {
 		$this->name = $name;
 		$this->value = $value;
 	}
 
-	public function set_header() {
+	public function set() : void {
 		header("{$this->name}: {$this->value}");
 	}
 }

@@ -1,28 +1,28 @@
 <?php
 
-namespace Server;
+namespace Mini\Data;
 
 class Cookie {
 
-	const NONE = "None";
-	const LAX = "Lax";
-	const STRICT = "Strict";
+	const None = "None";
+	const Lax = "Lax";
+	const Strict = "Strict";
 
-	public $name;
-	public $value;
-	public $expires;
-	public $path = "";
-	public $domain = "";
-	public $secure = false;
-	public $http_only = false;
-	public $same_site = "";
+	public string $name;
+	public string $value;
+	public ?int $expires = null;
+	public string $path = "";
+	public string $domain = "";
+	public bool $secure = false;
+	public bool $http_only = false;
+	public string $same_site = "";
 
 	public function __construct(string $name, string $value = "") {	
 		$this->name = $name;
 		$this->value = $value;
 	}
 
-	public function expires_in(int $expires) : self {
+	public function expires(int $expires) : self {
 		$this->expires = $expires;
 		return $this;
 	}
@@ -52,7 +52,7 @@ class Cookie {
 		return $this;
 	}
 
-	public function set_cookie() {
+	public function set() : void {
 		setcookie($this->name, $this->value, [
 			"expires" => $this->expires === null ? 0 : time() + $this->expires,
 			"path" => $this->path,

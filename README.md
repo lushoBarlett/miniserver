@@ -13,60 +13,65 @@ namespace MyApp;
 
 require 'vendor/autoload.php';
 
-use Server\Service;
-use Server\Environment;
+use Mini\Service;
+use Mini\Environment;
 
-use Server\Request;
-use Server\Response;
+use Mini\Request;
+use Mini\Response;
 
-use Server\Controllers\Controller;
-use Server\Controllers\ConstController;
+use Mini\Tools\HTTP;
 
-class Argument {
+use Mini\Data\Cookie;
 
-	private $constant;
-	private $suffix;
-	public function __construct(Enviroment $env) {
-		$this->constant = $env->constant("constant");
-		$this->suffix = $env->provider("suffixer");
+$env = (new Environment)
+	->response(function(Response $response) {
+		$response->cookie(new Cookie("name", "value"));
+		return $response;
+	});
+
+class NameWrapper {
+	public string $prefix;
+	public string $suffix;
+
+	public function __construct(string $prefix, string $suffix = "!") {
+		$this->prefix = $prefix;
+		$this->suffix = $suffix;
 	}
 
-	function get(Request $r) {
-		$name = ($this->suffix)($r->args["name"]);
+	public function __invoke(string $name) {
 		return (new Response)
 			->status(200)
-			->payload("Hey, {$this->name} Constant is {$this->constant}.");
+			->payload($this->prefix . $this->name . $this->suffix);
 	}
 }
 
-$routes = [
-	"/my/route" => ConstController::Node(Response::withStatus(200)),
-	"/my/@name" => Controller::Node(Argument::class, ["constant" => 2]),
+$router = new Router(
+	Route::define("/my/route", HTTP::GET, fn(Request $r) => Response::OK()),
+	
+	Route::define("/hey/@name", HTTP::GET | HTTP::POST, new NameWrapper("Hey, "))
+		->omit_request()
+		->environment($env),
 	...
-];
-
-$suffix = "!";
-
-$env = new Environment([
-	"constant" => 1,
-	"#suffixer" => function(string $arg) use($suffix) {
-		return "{$arg}{$suffix}";
-	},
-	"@module" => new SomeModule(...),
-	...
-]);
+);
 
 $debug_request = new Request([
 	"action" => "/my/robert",
-	"method" => Request::GET,
+	"method" => HTTP::GET,
 	...
 ]);
 
-$service = new Service($routes, $env);
+$service = new Service($routes);
 
-$response_object = $service->respond($debug_request);
+$response = $service->respond($debug_request);
 
-echo $response_object; // Hey, robert! Constant is 2.
+$service->debug->append("file.log");
+
+/**
+ * HTTP code: 200
+ * body: "Hey, robert!"
+ * cookie: "name=value"
+ */
+echo $response;
 
 ?>
 ```
