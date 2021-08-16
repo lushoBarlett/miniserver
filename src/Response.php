@@ -1,16 +1,18 @@
 <?php
 
-namespace Server;
+namespace Mini;
+
+use Mini\Data\Cookie;
+use Mini\Data\Header;
+use Mini\Tools\Template;
 
 class Response {
 
-	private $status = 200;
-	private $redirect;
-	private $payload = "";
-	private $cookies = [];
-	private $headers = [];
-
-	public function __construct() {}
+	public int $status = 200;
+	public ?string $redirect = null;
+	public string $payload = "";
+	public array $cookies = [];
+	public array $headers = [];
 
 	public function __toString() : string {
 		http_response_code($this->status);
@@ -19,19 +21,13 @@ class Response {
 			$this->headers[] = new Header("Location", $this->redirect);
 
 		foreach ($this->headers as $header)
-			$header->set_header();
+			$header->set();
 
 		foreach ($this->cookies as $cookie)
-			$cookie->set_cookie();
+			$cookie->set();
 
 		return $this->payload;
 	}
-	
-	public function get_status()   { return $this->status;   }
-	public function get_redirect() { return $this->redirect; }
-	public function get_payload()  { return $this->payload;  }
-	public function get_cookies()  { return $this->cookies;  }
-	public function get_headers()  { return $this->headers;  }
 
 	public function status(int $status) : self {
 		$this->status = $status;
@@ -77,12 +73,15 @@ class Response {
 		return (new self)->payload($view);
 	}
 	
-	public static function withTemplate($template, ?array $vars = null) : self {
+	/**
+	 * @param string|Template $template
+	 */
+	public static function withTemplate($template, array $vars = []) : self {
+		// TODO: error handling
 		if (is_string($template)) {
 			$template = new Template($template);
-			$template->add_vars($vars ?? []);
+			$template->declare_all($vars);
 		}
-		// TODO: error handling
 
 		return (new self)->payload($template->render());
 	}
@@ -95,6 +94,9 @@ class Response {
 		return (new self)->status($status);
 	}
 
+	/**
+	 * @param array<Cookie> $args
+	 */
 	public static function withCookies(...$args) : self {
 		$r = new self;
 		foreach ($args as $cookie)
@@ -102,6 +104,9 @@ class Response {
 		return $r;
 	}
 
+	/**
+	 * @param array<Header> $args
+	 */
 	public static function withHeaders(...$args) : self {
 		$r = new self;
 		foreach ($args as $header)
@@ -117,6 +122,9 @@ class Response {
 		return self::withStatus(500);
 	}
 
+	/**
+	 * @param mixed $value
+	 */
 	public static function withJSON($value) : self {
 		return self::withText(json_encode($value));
 	}

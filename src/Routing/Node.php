@@ -1,17 +1,15 @@
 <?php
 
-namespace Server\Routing;
+namespace Mini\Routing;
 
 class Node {
 
-	public $value;
-	public $children;
-	public $route;
+	public ?Route $route;
+	public array $children;
 
-	public function __construct($value = null, array $children = [], ?string $route = null) {
-		$this->value = $value;
-		$this->children = $children;
+	public function __construct(Route $route = null, array $children = []) {
 		$this->route = $route;
+		$this->children = $children;
 	}
 }
 

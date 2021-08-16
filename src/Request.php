@@ -1,32 +1,24 @@
 <?php
 
-namespace Server;
+namespace Mini;
+
+use Mini\Tools\HTTP;
+use Mini\Data\File;
 
 class Request {
 
-	const GET = "GET";
-	const POST = "POST";
-	const PUT = "PUT";
-	const PATCH = "PATCH";
-	const DELETE = "DELETE";
-	const HEAD = "HEAD";
-	const OPTIONS = "OPTIONS";
-	const TRACE = "TRACE";
-	const CONNECT = "CONNECT";
-
-	public $action;
-	public $secure;
-	public $method;
-	public $get;
-	public $post;
-	public $raw;
-	public $contentType;
-	public $json;
-	public $cookies;
-	public $files;
-	public $IP;
-	// filled by Resolution arguments
-	public $args = [];
+	public string $action = "";
+	public bool $secure = false;
+	public int $method = HTTP::GET;
+	public array $get = [];
+	public array $post = [];
+	public string $raw = "";
+	public string $contentType = "";
+	/** @var mixed $json */
+	public $json = null;
+	public array $cookies = [];
+	public array $files = [];
+	public string $IP = "";
 
 	public function __construct(?array $debug = null) {
 		if ($debug !== null) {
@@ -37,11 +29,12 @@ class Request {
 		}
 	}
 
-	private function get() {
-		$this->action = $this->splitURI($_SERVER["REQUEST_URI"] ?? null);
+	// TODO: fail on missing $_SERVER value
+	private function get() : void {
+		$this->action = $this->splitURI($_SERVER["REQUEST_URI"]);
 		$this->secure = isset($_SERVER["HTTPS"]);
-		$this->method = $_SERVER["REQUEST_METHOD"] ?? null;
-		$this->contentType = $_SERVER["CONTENT_TYPE"] ?? null;
+		$this->method = HTTP::from_string($_SERVER["REQUEST_METHOD"]);
+		$this->contentType = $_SERVER["CONTENT_TYPE"];
 
 		$this->raw = $this->getraw();
 		$this->post = $_POST;
@@ -53,12 +46,12 @@ class Request {
 		$this->IP = $this->getIP();
 	}
 
-	private function splitURI(?string $uri) : ?string {
-		return $uri ? explode("?", $uri)[0] : null;
+	private function splitURI(string $uri) : string {
+		return explode("?", $uri)[0];
 	}
 
-	private function getraw() {
-		if ($this->method == self::GET) {
+	private function getraw() : string {
+		if ($this->method == HTTP::GET) {
 			try {
 				return urldecode($_SERVER["QUERY_STRING"] ?? "");
 			} catch (\Exception $e) {
@@ -69,6 +62,9 @@ class Request {
 		return file_get_contents("php://input");
 	}
 
+	/**
+	 * @return mixed
+	 */
 	private function getjson() {
 		if ($this->contentType == "application/json") {
 			try {
@@ -79,6 +75,9 @@ class Request {
 		}
 	}
 
+	/**
+	 * @return array<array<File>>
+	 */
 	private function getfiles() : array {
 		$formatted = [];
 
@@ -104,7 +103,7 @@ class Request {
 
 			// else, normal file format
 			else {
-				$formatted[$identifier] = new File(
+				$formatted[$identifier][0] = new File(
 					$atributes['name'],
 					$atributes['type'],
 					$atributes['tmp_name'],
@@ -117,7 +116,7 @@ class Request {
 		return $formatted;
 	}
 
-	private function getIP() {
+	private function getIP() : string {
 		return $_SERVER['HTTP_X_FORWARDED_FOR']
 		    ?? $_SERVER["REMOTE_ADDR"]
 		    ?? $_SERVER["HTTP_CLIENT_IP"]

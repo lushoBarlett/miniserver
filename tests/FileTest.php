@@ -1,6 +1,6 @@
 <?php
 
-namespace Server;
+namespace Mini\Data;
 
 require "vendor/autoload.php";
 

@@ -1,138 +1,96 @@
 <?php
 
-namespace Server;
+namespace Mini;
 
-use \Server\Controllers\Node;
-use \Server\Routing\Router;
+use Mini\Routing\Router;
+use Mini\Routing\Route;
+use Mini\Tools\Debug;
+use Mini\Tools\HTTP;
 
 class Service {
 
-	// TODO: introduce polymorphism to enhance possible
-	// capabilities while maintaining readability
-	const NORMAL   = 0;
-	const DEBUG    = 1;
-	const INACTIVE = 2;
+	private Router $router;
+	private Environment $environment;
 
-	public $SERVICE_MODE = self::NORMAL;
+	public Debug $debug;
 
-	private $router;
-	private $env;
-
-	public function __construct(?Router $router = null, ?Environment $env = null) {
+	public function __construct(Router $router = null, Environment $environment = null) {
 		$this->router = $router ?? new Router;
-		$this->env = $env ?? new Environment;
-	}
-
-	// ======================================================================= //
-	// NOTE: the way we work with a State and the directives that access it is //
-	//                                                                         //
-	// 1. Something happens                                                    //
-	// 2. Service executes default behaviour                                   //
-	// 3. Let directives do whatever                                           //
-	//                                                                         //
-	// The only exception is in report where we just fallback to               //
-	// panic response, because directive calling has failed.                   //
-	// After a directive fails, another report might happen where errors       //
-	// may be read.                                                            //
-	// ======================================================================= //
-
-	private function debug(string $output, State $s) {
-		if ($this->SERVICE_MODE == self::DEBUG) {
-			$debug = empty($output) ? "" : "DEBUG:\n $output\n";
-			foreach ($s->error_list as $e)
-				$debug .= "$e\n";
-
-			$s->response = $s->response ?? new Response;
-			$s->response->payload($debug . $s->response->get_payload());
-		}
-	}
-
-	private function report(string $event_name, State $s) : State {
-		ob_start();
-		try {
-			$s = $this->env->report($event_name, $s);
-		}
-		// TODO: better error reporting
-		// add a special exception type
-		// to tell that this is a directive error
-		catch(\Exception $e) {
-			$s->error_list[] = $e;
-			$s->response = $this->panic();
-		}
-		catch(\Error $e) {
-			$s->error_list[] = $e;
-			$s->response = $this->panic();
-		}
-		$output = ob_get_clean();
-		$this->debug($output, $s);
-
-		return $s;
-	}
-
-	public function respond(?Request $r = null) : Response { 
-		if ($this->SERVICE_MODE == self::INACTIVE)
-			return Response::withStatus(503);
-
-		$s = new State($r ?? new Request);
-		$s = $this->report("request", $s);
-
-		// NOTE: null action is considered error 404
-		if ($s->request->action === null) {
-			$s->response = Response::notFound();
-			$s = $this->report("response", $s);
-			return $s->response;
-		}
-
-		$s->resolution = $this->router->resolve($s->request->action);
-		$s = $this->report("resolution", $s);
-
-		if (!$s->resolution) {
-			$s->response = Response::notFound();
-			$s = $this->report("response", $s);
-			return $s->response;
-		}
-
-		// set request route arguments
-		$s->request->args = $s->resolution->args;
-		$s = $this->execute($s);
-		$s = $this->report("response", $s);
-
-		return $s->response;
-	}
-
-	private function execute(State $s) : State {
-		$node = $s->resolution->value;
-		$node->env = $this->env->extend($node->env);
-
-		ob_start();
-		try {
-			$s->response = (new $node->cons($node->env))->__service_init($s->request);
-		} catch (\Exception $e) {
-			$s->error_list[] = $e;
-			$s->response = $this->panic();
-
-			$s = $this->report("exception", $s);
-		} catch (\Error $e) {
-			$s->error_list[] = $e;
-			$s->response = $this->panic();
-
-			$s = $this->report("error", $s);
-		}
-		$output = ob_get_clean();
-
-		$this->debug($output, $s);
-		
-		// NOTE: you are not supposed to output to stdout in normal mode
-		if(!empty($output) and $this->SERVICE_MODE == Service::NORMAL) {
-			$s->error_list[] = new \Exception("Controller produced output: $output");
-			$s = $this->report("exception", $s);
-		}
-
-		return $s;
+		$this->environment = $environment ?? new Environment;
+		$this->debug = new Debug;
 	}
 
 	private function panic() : Response {
+		$this->debug->print("Service panicked.");
 		return Response::serverError();
+	}
+
+	private function fail(Environment $first, Environment $second = null) : Response {
+		$response = $first->pipe_fail(Response::serverError(), $this->debug);
+		if ($first->failed)
+			return $this->panic();
+
+		if ($second) {
+			$response = $second->pipe_fail($response, $this->debug);
+			if ($second->failed)
+				return $this->panic();
+		}
+
+		return $response;
+	}
+
+	public function respond(?Request $request = null) : Response { 
+		$request = $request ?? new Request;
+
+		// request
+		$request = $this->environment->pipe_request($request, $this->debug);
+		if ($this->environment->failed)
+			return $this->fail($this->environment);
+
+		// route resolution
+		$route = $this->router->resolve($request->action);
+		if (!$route || !HTTP::match($route->method, $request->method)) {
+			$response = $this->environment->pipe_response(Response::notFound(), $this->debug);
+			if ($this->environment->failed)
+				return $this->fail($this->environment);
+
+			return $response;
+		}
+
+		// controller
+		$request = $route->environment->pipe_request($request, $this->debug);
+		if ($route->environment->failed)
+			return $this->fail($route->environment, $this->environment);
+
+		$this->debug->start();
+		try {
+			$arguments = $route->arguments($request->action);
+			/**
+			 * @psalm-suppress PossiblyNullFunctionCall
+			 * The Router has already validated both the name and controller parameters exist
+			 */
+			$response = $route->request
+			            ? ($route->controller)($request, ...array_values($arguments))
+			            : ($route->controller)(...array_values($arguments));
+		} catch (\Throwable $throwable) {
+			$this->debug->entry("During controller call")
+			            ->newline()
+			            ->throwed($throwable)
+				    ->collect();
+			return $this->fail($route->environment, $this->environment);
+		}
+		$this->debug->collect();
+
+		$response = $route->environment->pipe_response($response, $this->debug);
+		if ($route->environment->failed)
+			return $this->fail($route->environment, $this->environment);
+
+		// response
+		$response = $this->environment->pipe_response($response, $this->debug);
+		if ($this->environment->failed)
+			return $this->fail($this->environment);
+		
+		return $response;
 	}
 }
 
