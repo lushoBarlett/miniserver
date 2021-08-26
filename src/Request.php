@@ -34,7 +34,7 @@ class Request {
 		$this->action = $this->splitURI($_SERVER["REQUEST_URI"]);
 		$this->secure = isset($_SERVER["HTTPS"]);
 		$this->method = HTTP::from_string($_SERVER["REQUEST_METHOD"]);
-		$this->contentType = $_SERVER["CONTENT_TYPE"];
+		$this->contentType = $_SERVER["CONTENT_TYPE"] ?? '';
 
 		$this->raw = $this->getraw();
 		$this->post = $_POST;
