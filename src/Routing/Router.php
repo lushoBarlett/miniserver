@@ -38,10 +38,11 @@ class Router {
 
 	/**
 	 * @param array<string> $path
+	 * @return array<int, Route>
 	 */
-	private function _resolve(Node $tree, array $path) : ?Route {
+	private function _resolve(Node $tree, array $path) : array {
 		if (empty($path))
-			return $tree->route;
+			return $tree->routes;
 
 		list($p, $ps) = self::partition($path);
 
@@ -53,10 +54,13 @@ class Router {
 		if (isset($tree->children[Route::Argument]))
 			return $this->_resolve($tree->children[Route::Argument], $ps);
 		
-		return null;
+		return [];
 	}
 
-	public function resolve(string $url) : ?Route {
+	/**
+	 * @return array<int, Route>
+	 */
+	public function resolve(string $url) : array {
 		return $this->_resolve($this->tree, Route::split($url));
 	}
     
@@ -64,10 +68,8 @@ class Router {
 	 * @param array<string> $path
 	 */
 	private function _add(Node $tree, array $path, Route $route) : Node {
-		if (empty($path)) {
-			$tree->route = $route;
-			return $tree;
-		}
+		if (empty($path))
+			return $tree->override($route);
 
 		list($p, $ps) = self::partition($path);
 

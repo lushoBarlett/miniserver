@@ -48,14 +48,15 @@ class Service {
 			return $this->fail($this->environment);
 
 		// route resolution
-		$route = $this->router->resolve($request->action);
-		if (!$route || !HTTP::match($route->method, $request->method)) {
+		$routes = $this->router->resolve($request->action);
+		if (!isset($routes[$request->method])) {
 			$response = $this->environment->pipe_response(Response::notFound(), $this->debug);
 			if ($this->environment->failed)
 				return $this->fail($this->environment);
 
 			return $response;
 		}
+		$route = $routes[$request->method];
 
 		// controller
 		$request = $route->environment->pipe_request($request, $this->debug);

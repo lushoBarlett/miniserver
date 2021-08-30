@@ -17,7 +17,7 @@ class Route {
 	public ?string $name = null;
 	/** @var array<string> */
 	public array $types = [];
-	public int $method = HTTP::ANY;
+	public int $methods = HTTP::ANY;
 	public bool $request = true;
 	public Environment $environment;
 
@@ -38,8 +38,8 @@ class Route {
 		return $this;
 	}
 
-	public function method(int $method) : self {
-		$this->method = $method;
+	public function methods(int $methods) : self {
+		$this->methods = $methods;
 		return $this;
 	}
 
@@ -82,18 +82,18 @@ class Route {
 		return $arguments;
 	}
 
-	public static function define(string $route, int $method, callable $controller) : self {
+	public static function define(string $route, int $methods, callable $controller) : self {
 		return (new self)
 			->name($route)
 			->controller($controller)
-			->method($method);
+			->methods($methods);
 	}
 
 	public static function forall(string $route, callable $controller) : self {
 		return (new self)
 			->name($route)
 			->controller($controller)
-			->method(HTTP::ANY);
+			->methods(HTTP::ANY);
 	}
 
 	public static function trim(string $route) : string {
